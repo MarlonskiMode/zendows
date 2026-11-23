@@ -1,0 +1,214 @@
+//! The window: Hex's settings shell. A sidebar of panes under the traffic lights, with the
+//! version and an update check at its foot, beside a raised panel holding the pane.
+
+use rune::{Anim, Cx, El, ScrollSpec, Tx, col, el, icon, row, text};
+
+use crate::{
+    Pane, Ui,
+    controls::{self, Paint},
+    hud, onboarding,
+};
+
+/// The traffic lights sit over the sidebar, so the navigation starts below them.
+const SIDEBAR_TOP: f32 = 52.0;
+/// OpenCode Desktop's settings navigation: 28 pt rows with a 4 pt gap.
+const NAV_ROW_HEIGHT: f32 = 28.0;
+const NAV_ROW_GAP: f32 = 4.0;
+pub const SIDEBAR_WIDTH: f32 = 220.0;
+/// The panel's inset from the window's top, right and bottom.
+pub const PANEL_INSET: f32 = 8.0;
+pub const HEADER_HEIGHT: f32 = 56.0;
+pub const CONTENT_PADDING: f32 = 24.0;
+
+pub fn view(ui: &Ui, cx: &mut Cx<Ui>) -> El {
+    let p = Paint::new(cx.system_dark(), cx.env().scale);
+    // Menus mount above the page (rune-kit overlays).
+    let mut layer = Vec::new();
+    let body = ui.pane.render(ui, p, &mut layer);
+    let panel = col()
+        .key("panel")
+        .grow(1.0)
+        .shrink()
+        .mt(PANEL_INSET)
+        .mr(PANEL_INSET)
+        .mb(PANEL_INSET)
+        .radius(p.k.radius.lg)
+        .fill(p.k.c.bg_base)
+        .border(p.hair, p.k.c.border_weak)
+        .padding(p.hair)
+        .clip_soft(0.0)
+        .child(pane_header(p, ui.pane.title()))
+        .children(error_banner(ui, p))
+        .child(body);
+    let window = row()
+        .key("window")
+        .role("window")
+        .fill(p.k.c.bg_deep)
+        .hover_motion_within(Anim::INSTANT, Anim::INSTANT)
+        .child(sidebar(ui, p))
+        .child(panel);
+    if let Some(tour) = onboarding::overlay(ui, p) {
+        layer.push(tour);
+    }
+    if let Some(hud_preview) = &ui.hud_preview {
+        layer.push(hud::stage(hud_preview, p, cx.is_reduced_motion()));
+    }
+    rune_kit::root(window, layer)
+}
+
+fn sidebar(ui: &Ui, p: Paint) -> El {
+    let mut nav = col().key("nav").role("list").focus_group().focus_follows();
+    for pane in Pane::ALL {
+        nav = nav.child(nav_slot(p, pane, ui.pane == pane));
+    }
+    col()
+        .window_drag()
+        .key("sidebar")
+        .role("navigation")
+        .w(SIDEBAR_WIDTH)
+        .h_full()
+        .pt(SIDEBAR_TOP - NAV_ROW_GAP / 2.0)
+        .pb(16.0)
+        .pl(10.0)
+        .pr(6.0)
+        .child(nav)
+        .child(el().key("spacer").grow(1.0))
+        .child(
+            text(format!("Version {}", env!("CARGO_PKG_VERSION")))
+                .key("version")
+                .font(p.k.ty.small)
+                .color(p.faint())
+                .pl(6.0),
+        )
+        .child(crate::updates::sidebar(ui, p))
+}
+
+/// Slots tile the item column, each reaching halfway into the gaps around its item, so a press
+/// anywhere in the column selects the nearest item.
+fn nav_slot(p: Paint, pane: Pane, on: bool) -> El {
+    col()
+        .key(format!("{}-slot", pane.key()))
+        .py(NAV_ROW_GAP / 2.0)
+        .hover_group()
+        .on_drag(move |ui: &mut Ui, d: &mut rune::Drag, _: &mut Tx| {
+            if d.phase == rune::Phase::Down {
+                ui.select_pane(pane);
+            }
+        })
+        .on_press(move |ui: &mut Ui| ui.select_pane(pane))
+        .child(nav_item(p, pane, on))
+}
+
+fn nav_item(p: Paint, pane: Pane, on: bool) -> El {
+    let c = &p.k.c;
+    let mut item = row()
+        .key(pane.key())
+        .role("button")
+        .label(pane.title())
+        .h(NAV_ROW_HEIGHT)
+        .px(6.0)
+        .gap(8.0)
+        .center_y()
+        .radius(p.k.radius.sm)
+        .press(c.pressed)
+        .on_press(move |ui: &mut Ui| ui.select_pane(pane))
+        .child(
+            el().key("hover")
+                .pin(Some(0.0), Some(0.0), Some(0.0), Some(0.0))
+                .radius(p.k.radius.sm)
+                .fill(c.hover)
+                .group_opacity(0.0, 1.0),
+        )
+        .child(icon(pane.icon(), 16.0).key("icon").color(if on {
+            c.icon_base
+        } else {
+            c.icon_muted
+        }))
+        .child(
+            text(pane.title())
+                .key("label")
+                .font(p.k.ty.ui)
+                .color(if on { c.text_base } else { c.text_muted })
+                .truncate(),
+        );
+    if on {
+        item = item.fill(c.layer_02);
+    }
+    item.focusable(true)
+        .focus_selected(on)
+        .focus_ring(2.0, -2.0, c.border_focus)
+}
+
+/// The panel's title bar, which also moves the window.
+fn pane_header(p: Paint, title: &str) -> El {
+    row()
+        .window_drag()
+        .key("pane-header")
+        .h(HEADER_HEIGHT)
+        .px(CONTENT_PADDING)
+        .center_y()
+        .child(
+            text(title)
+                .key("pane-title")
+                .font(p.k.ty.body_medium)
+                .color(p.text())
+                .shrink()
+                .truncate(),
+        )
+}
+
+/// A save that failed, a config file Zendows can't read, or an agent error such as
+/// unavailable hotkeys, which used to be visible only through the control socket.
+fn error_banner(ui: &Ui, p: Paint) -> Option<El> {
+    let agent_error = ui
+        .agent
+        .as_ref()
+        .and_then(|agent| agent.last_error.as_deref());
+    let copy = ui
+        .error
+        .as_deref()
+        .or(ui.doc.error.as_deref())
+        .or(agent_error)?;
+    Some(
+        row()
+            .key("error")
+            .mx(CONTENT_PADDING)
+            .mb(8.0)
+            .px(12.0)
+            .py(8.0)
+            .gap(8.0)
+            .center_y()
+            .radius(p.k.radius.md)
+            .fill(p.k.c.danger.bg)
+            .child(controls::status_dot(p.k.c.danger.fg))
+            .child(
+                text(copy)
+                    .key("copy")
+                    .font(controls::DESCRIPTION)
+                    .color(p.text())
+                    .wrap()
+                    .grow(1.0)
+                    .shrink(),
+            ),
+    )
+}
+
+/// A vertically scrolling pane body.
+pub fn scroll_body(key: &str, content: El) -> El {
+    col()
+        .key(key)
+        .grow(1.0)
+        .shrink()
+        .clip_fade(0.0, 4.0, 0.0, 24.0)
+        .scroll(ScrollSpec {
+            stick_bottom: false,
+        })
+        .child(
+            col()
+                .key("inset")
+                .px(CONTENT_PADDING)
+                .pt(4.0)
+                .pb(24.0)
+                .child(content),
+        )
+}

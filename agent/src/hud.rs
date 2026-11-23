@@ -1,0 +1,515 @@
+//! Non-activating Workspace HUD overlay: a capsule near the bottom of each display showing its
+//! row of workspaces, with a marker on the one you are on, when you switch workspaces, move a
+//! window or change a layout. Never includes window titles or steals focus.
+//!
+//! Each display gets its own panel from a fixed pool, at a fixed size, only ordered in and out.
+//! The capsule's entrance, exit and content changes are drawn inside it (`pill.rs`), so every
+//! one of them can turn around mid-flight.
+
+mod flow;
+mod grow;
+mod icons;
+mod menu;
+#[cfg(test)]
+mod motion_tests;
+mod pill;
+mod stage;
+#[cfg(test)]
+mod tests;
+
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+
+use rune::{
+    Align, Cx, DisplayTarget, El, KeyPolicy, NativeDisplayId, OverlayHandle, OverlayInput,
+    OverlayOptions, OverlaySpec, ScreenEdge, Tx, row,
+};
+use zendows::{
+    WorkspaceId,
+    app::{UiHudDisplay, UiHudEvent},
+    config::HudStyle,
+};
+
+use flow::FRESH_MS;
+#[cfg(test)]
+use flow::{HOLD_MS, RESUME_HOLD_MS};
+pub use flow::{HudFlow, HudTick, HudTransition, LEAVE_MS};
+pub use menu::HudSink;
+#[cfg(target_os = "macos")]
+pub use menu::LiveHudSink;
+#[cfg(test)]
+use menu::NoopHudSink;
+pub use pill::Icons;
+pub(crate) use stage::{HudPreview, SCENES, stage, triggers};
+
+use crate::{apps, controls::Paint};
+
+/// While a panel is up, how often it checks its display is still connected.
+const DISPLAY_CHECK_MS: u64 = 250;
+/// Only the first show fades the panel itself over 150 ms: nothing has been drawn to enter from yet.
+const FIRST_FADE: Duration = Duration::from_millis(150);
+/// Subsequent reveals use a brief fade (>= 33 ms) instead of `show()` so AppKit marks the
+/// panel visible before Rune's occlusion check runs, avoiding its 250 ms retry
+/// (anomalyco/rune#1714) while letting the capsule's own entry spring carry the motion.
+const REVEAL_FADE: Duration = Duration::from_millis(40);
+/// Room on every side of the capsule for its shadow, which the panel's edge would cut, and
+/// for ten or so workspaces before the row scrolls.
+const OVERLAY_SIZE: (f32, f32) = (860.0, pill::PILL_HEIGHT + 2.0 * pill::SHADOW_REACH);
+/// Keeps the capsule 60 pt above the bottom of the display.
+const OVERLAY_MARGIN: f32 = 60.0 - pill::SHADOW_REACH;
+/// One panel per display, up to this many displays.
+const PANEL_NAMES: [&str; 4] = [
+    "Zendows HUD",
+    "Zendows HUD 2",
+    "Zendows HUD 3",
+    "Zendows HUD 4",
+];
+
+pub(super) struct HudOverlay {
+    flow: HudFlow,
+    style: HudStyle,
+    icons: Icons,
+    names: HashMap<String, String>,
+    sink: Arc<dyn HudSink>,
+    /// Reduce Motion as of the last event; the panel never takes focus, so Rune doesn't
+    /// re-read it for us.
+    reduce_motion: bool,
+    /// The panel has been shown once, so its view has a drawn state to animate from.
+    primed: bool,
+    /// The display the panel is on, to hide it if that display goes away.
+    display: Option<u32>,
+    handle: Option<OverlayHandle<HudOverlay>>,
+    hovered_workspace: Option<WorkspaceId>,
+    hovered_app: Option<(WorkspaceId, String)>,
+    #[cfg(test)]
+    virtual_clock: Option<Arc<std::sync::atomic::AtomicU64>>,
+}
+
+impl HudOverlay {
+    fn new(enabled: bool, style: HudStyle, sink: Arc<dyn HudSink>) -> Self {
+        Self {
+            flow: HudFlow::new(enabled),
+            style,
+            icons: Icons::new(),
+            names: HashMap::new(),
+            sink,
+            reduce_motion: false,
+            primed: false,
+            display: None,
+            handle: None,
+            hovered_workspace: None,
+            hovered_app: None,
+            #[cfg(test)]
+            virtual_clock: None,
+        }
+    }
+
+    fn now_ms(&self) -> u64 {
+        #[cfg(test)]
+        if let Some(clock) = &self.virtual_clock {
+            return clock.load(std::sync::atomic::Ordering::Relaxed);
+        }
+        zendows::journal::unix_millis()
+    }
+
+    fn schedule_wake(&self, now_ms: u64, tx: &mut Tx) {
+        if let Some(remaining_ms) = self.flow.remaining_ms(now_ms) {
+            let check = if self.display.is_some() {
+                DISPLAY_CHECK_MS
+            } else {
+                u64::MAX
+            };
+            tx.wake_after(Duration::from_millis(remaining_ms.min(check)));
+        } else if self.flow.is_up() && self.display.is_some() {
+            tx.wake_after(Duration::from_millis(DISPLAY_CHECK_MS));
+        }
+    }
+
+    pub(super) fn set_hovered(&mut self, inside: bool, tx: &mut Tx) {
+        let now_ms = self.now_ms();
+        self.flow.set_hovered(inside, now_ms);
+        if !inside && !self.flow.is_held() {
+            self.hovered_app = None;
+            self.hovered_workspace = None;
+        }
+        self.schedule_wake(now_ms, tx);
+    }
+
+    pub(super) fn set_hovered_workspace(&mut self, workspace: WorkspaceId, inside: bool) {
+        if inside {
+            self.hovered_workspace = Some(workspace);
+        } else if self.hovered_workspace == Some(workspace) {
+            self.hovered_workspace = None;
+        }
+    }
+
+    pub(super) fn set_hovered_app(&mut self, workspace: WorkspaceId, bundle: &str, inside: bool) {
+        if inside {
+            self.hovered_app = Some((workspace, bundle.to_owned()));
+        } else if self
+            .hovered_app
+            .as_ref()
+            .is_some_and(|(ws, id)| *ws == workspace && id == bundle)
+        {
+            self.hovered_app = None;
+        }
+    }
+
+    pub(super) fn switch_workspace(&mut self, workspace: WorkspaceId, tx: &mut Tx) {
+        self.sink.switch_workspace(workspace);
+        self.schedule_wake(self.now_ms(), tx);
+    }
+
+    pub(super) fn open_settings(&mut self, tx: &mut Tx) {
+        let now_ms = self.now_ms();
+        self.sink.open_settings();
+        if self.flow.leave_now(now_ms) {
+            tx.wake_after(Duration::from_millis(LEAVE_MS));
+        }
+    }
+
+    pub(super) fn open_app_menu(
+        &mut self,
+        workspace: WorkspaceId,
+        bundle: &str,
+        at: (f32, f32),
+        tx: &mut Tx,
+    ) {
+        let now_ms = self.now_ms();
+        let app_name = self
+            .names
+            .get(bundle)
+            .cloned()
+            .unwrap_or_else(|| apps::fallback_name(bundle));
+        let current = self.sink.app_place(bundle);
+        let popup = menu::build_app_menu(&app_name, workspace, current);
+        self.flow.set_menu_open(true, now_ms);
+        let bundle_id = bundle.to_owned();
+        tx.popup_menu(popup, at, move |overlay: &mut HudOverlay, picked, tx| {
+            let close_ms = overlay.now_ms();
+            if let Some(picked) = picked
+                && let Some(new_place) = menu::resolve_app_menu_pick(picked, workspace, current)
+            {
+                drop(overlay.sink.set_app_place(&bundle_id, new_place));
+            }
+            overlay.flow.set_menu_open(false, close_ms);
+            overlay.schedule_wake(close_ms, tx);
+        });
+    }
+
+    pub(super) fn secondary_click_at(&mut self, x: f32, y: f32, tx: &mut Tx) {
+        if !self.flow.is_up() {
+            return;
+        }
+        let target = self.hovered_app.clone().or_else(|| {
+            let workspace = self.hovered_workspace?;
+            let row = self.flow.current()?;
+            let entry = row
+                .workspaces
+                .iter()
+                .find(|entry| entry.workspace == workspace)?;
+            let apps = icons::apps(entry);
+            (apps.len() == 1).then(|| (workspace, apps[0].to_owned()))
+        });
+        if let Some((workspace, bundle)) = target {
+            self.open_app_menu(workspace, &bundle, (x, y), tx);
+        }
+    }
+}
+
+struct Panel {
+    handle: OverlayHandle<HudOverlay>,
+    /// The display the panel is assigned to, by its `UiHudDisplay::id`.
+    display: Option<String>,
+}
+
+struct Panels {
+    panels: Vec<Panel>,
+    apps: apps::Catalog,
+}
+
+#[derive(Clone)]
+pub struct HudDriver {
+    panels: Arc<Mutex<Panels>>,
+}
+
+pub fn install<S: 'static>(
+    app: &mut rune::App<S>,
+    enabled: bool,
+    style: HudStyle,
+    sink: Arc<dyn HudSink>,
+) -> HudDriver {
+    let panels: Vec<Panel> = PANEL_NAMES
+        .iter()
+        .map(|&name| {
+            let spec = OverlaySpec {
+                name,
+                size: OVERLAY_SIZE,
+                edge: ScreenEdge::Bottom,
+                margin: OVERLAY_MARGIN,
+                align: Align::Center,
+                inset: 0.0,
+                interactive: false,
+                view: overlay_view,
+            }
+            .options(OverlayOptions {
+                input: OverlayInput::Regions,
+                keys: KeyPolicy::None,
+                prewarm: false,
+                ..Default::default()
+            })
+            // Showing must not settle the view: the capsule enters from the pose it left in.
+            .animate_reveal()
+            .poll(overlay_poll);
+            let handle = app.overlay(spec, HudOverlay::new(enabled, style, Arc::clone(&sink)));
+            let inner = handle.clone();
+            handle.update(move |overlay, _| {
+                overlay.handle = Some(inner);
+            });
+            Panel {
+                handle,
+                display: None,
+            }
+        })
+        .collect();
+    menu::install_secondary_click_monitor(
+        panels.iter().map(|panel| panel.handle.clone()).collect(),
+    );
+    HudDriver {
+        panels: Arc::new(Mutex::new(Panels {
+            panels,
+            apps: apps::Catalog::default(),
+        })),
+    }
+}
+
+impl HudDriver {
+    /// Call on the main thread, where displays, app icons and Reduce Motion are read.
+    pub fn trigger(&self, event: UiHudEvent) {
+        let reduce_motion = reduce_motion();
+        let connected = display_ids();
+        let Ok(mut panels) = self.panels.lock() else {
+            return;
+        };
+        let (icons, names) = panels.metadata_for(&event);
+        let mut rows: Vec<(UiHudDisplay, DisplayTarget, Option<u32>)> = event
+            .displays
+            .iter()
+            .filter_map(|row| {
+                let id = *connected.get(&row.id)?;
+                Some((row.clone(), native(id), Some(id)))
+            })
+            .take(PANEL_NAMES.len())
+            .collect();
+        if rows.is_empty()
+            && let Some(row) = event.display_of(event.workspace)
+        {
+            // Displays couldn't be matched up: the acting display's row on the main one.
+            rows.push((row.clone(), DisplayTarget::Primary, None));
+        }
+        panels.assign(&rows);
+        for (row, target, display) in rows {
+            let Some(panel) = panels
+                .panels
+                .iter()
+                .find(|panel| panel.display.as_deref() == Some(row.id.as_str()))
+            else {
+                continue;
+            };
+            let icons = icons.clone();
+            let names = names.clone();
+            panel.handle.update_if(move |overlay, tx| {
+                if overlay.display != display || display.is_none() {
+                    if let Some(handle) = &overlay.handle {
+                        handle.set_display(target);
+                    }
+                    overlay.display = display;
+                }
+                let now_ms = overlay.now_ms();
+                let handle = overlay.handle.clone();
+                match overlay.flow.trigger(row, now_ms) {
+                    HudTransition::Ignored => return false,
+                    HudTransition::Show if overlay.primed => {
+                        if let Some(handle) = handle {
+                            handle.fade_in(REVEAL_FADE);
+                        }
+                    }
+                    HudTransition::Show => {
+                        overlay.primed = true;
+                        if let Some(handle) = handle {
+                            handle.fade_in(FIRST_FADE);
+                        }
+                    }
+                    HudTransition::Update => {}
+                }
+                overlay.icons.extend(icons);
+                overlay.names.extend(names);
+                overlay.reduce_motion = reduce_motion;
+                overlay.schedule_wake(now_ms, tx);
+                true
+            });
+        }
+    }
+
+    pub fn set_enabled(&self, enabled: bool) {
+        self.each(move |overlay, tx| {
+            let left = overlay
+                .flow
+                .set_enabled(enabled, zendows::journal::unix_millis());
+            if left {
+                tx.wake_after(Duration::from_millis(LEAVE_MS));
+            }
+            left
+        });
+    }
+
+    pub fn set_style(&self, style: HudStyle) {
+        self.each(move |overlay, _| {
+            let changed = overlay.style != style;
+            overlay.style = style;
+            changed
+        });
+    }
+
+    fn each(&self, f: impl Fn(&mut HudOverlay, &mut Tx) -> bool + Clone + Send + 'static) {
+        let Ok(panels) = self.panels.lock() else {
+            return;
+        };
+        for panel in &panels.panels {
+            let f = f.clone();
+            panel.handle.update_if(move |overlay, tx| f(overlay, tx));
+        }
+    }
+}
+
+impl Panels {
+    /// Every app in `event`: its cached icon (when installed) and display name, looked up once.
+    fn metadata_for(&mut self, event: &UiHudEvent) -> (Icons, HashMap<String, String>) {
+        let mut icons = Icons::new();
+        let mut names = HashMap::new();
+        for workspace in event.displays.iter().flat_map(|row| &row.workspaces) {
+            let tiles = workspace
+                .tiles
+                .iter()
+                .filter_map(|tile| tile.bundle.as_ref());
+            for bundle in tiles.chain(&workspace.floating) {
+                if !names.contains_key(bundle) {
+                    let app = self.apps.get(bundle);
+                    names.insert(bundle.clone(), app.name);
+                    if let Some(pixels) = app.icon {
+                        icons.insert(bundle.clone(), pixels);
+                    }
+                }
+            }
+        }
+        (icons, names)
+    }
+
+    /// Gives each display in `rows` a panel, and hides the panels of displays it leaves out.
+    fn assign(&mut self, rows: &[(UiHudDisplay, DisplayTarget, Option<u32>)]) {
+        let current: Vec<Option<String>> = self
+            .panels
+            .iter()
+            .map(|panel| panel.display.clone())
+            .collect();
+        let wanted: Vec<&str> = rows.iter().map(|(row, _, _)| row.id.as_str()).collect();
+        for (panel, display) in self.panels.iter_mut().zip(assign_panels(&current, &wanted)) {
+            if panel.display.is_some() && panel.display != display {
+                panel.handle.update_if(|overlay, _| {
+                    overlay.flow.dismiss();
+                    if let Some(handle) = &overlay.handle {
+                        handle.hide();
+                    }
+                    false
+                });
+            }
+            panel.display = display;
+        }
+    }
+}
+
+/// Which display each panel shows: every display it already showed and `wanted` still lists
+/// stays put, the rest are freed, and new displays take free panels in order. Displays past
+/// the pool get none.
+#[must_use]
+pub fn assign_panels(current: &[Option<String>], wanted: &[&str]) -> Vec<Option<String>> {
+    let mut panels: Vec<Option<String>> = current
+        .iter()
+        .map(|display| display.clone().filter(|id| wanted.contains(&id.as_str())))
+        .collect();
+    for id in wanted {
+        if panels.iter().any(|display| display.as_deref() == Some(*id)) {
+            continue;
+        }
+        if let Some(free) = panels.iter_mut().find(|display| display.is_none()) {
+            *free = Some((*id).to_owned());
+        }
+    }
+    panels
+}
+
+const fn native(id: u32) -> DisplayTarget {
+    DisplayTarget::Native(NativeDisplayId::MacOS(id))
+}
+
+#[cfg(target_os = "macos")]
+fn display_ids() -> std::collections::HashMap<String, u32> {
+    zendows::macos::display_ids()
+}
+
+#[cfg(not(target_os = "macos"))]
+fn display_ids() -> std::collections::HashMap<String, u32> {
+    std::collections::HashMap::new()
+}
+
+#[cfg(target_os = "macos")]
+fn reduce_motion() -> bool {
+    objc2_app_kit::NSWorkspace::sharedWorkspace().accessibilityDisplayShouldReduceMotion()
+}
+
+#[cfg(not(target_os = "macos"))]
+fn reduce_motion() -> bool {
+    false
+}
+
+fn overlay_poll(overlay: &mut HudOverlay, _clock: f64, tx: &mut Tx) -> bool {
+    let now_ms = zendows::journal::unix_millis();
+    if overlay.flow.is_up()
+        && let Some(display) = overlay.display
+        && !display_ids().values().any(|id| *id == display)
+    {
+        // Its display went away: Rune would move the panel to the main display, over that
+        // display's own capsule.
+        overlay.flow.dismiss();
+        if let Some(handle) = &overlay.handle {
+            handle.hide();
+        }
+        return false;
+    }
+    let tick = overlay.flow.tick(now_ms);
+    if tick == HudTick::Gone {
+        overlay.hovered_app = None;
+        overlay.hovered_workspace = None;
+        if let Some(handle) = &overlay.handle {
+            handle.hide();
+        }
+    }
+    overlay.schedule_wake(now_ms, tx);
+    matches!(tick, HudTick::Arrive | HudTick::Leave)
+}
+
+fn overlay_view(overlay: &HudOverlay, cx: &mut Cx<HudOverlay>) -> El {
+    if overlay.reduce_motion {
+        cx.reduced_motion(true);
+    }
+    let p = Paint::new(true, cx.env().scale);
+    overlay.flow.mark_drawn();
+    row().key("hud-root").w_full().h_full().center().children(
+        overlay.flow.view(cx.is_reduced_motion()).map(|view| {
+            pill::interactive_slot(&view, overlay.style, &overlay.icons, OVERLAY_SIZE.0, p)
+        }),
+    )
+}

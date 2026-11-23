@@ -1,0 +1,60 @@
+{
+  "settings": {
+    "output": { "x": 0, "y": 0, "width": 1440, "height": 900 },
+    "frame_tolerance": 2
+  },
+  "observations": [
+    {
+      "cycle": 1,
+      "mouse_down": false,
+      "applications": [
+        {
+          "status": "complete",
+          "app": {
+            "id": { "pid": 42, "launched_at": 1000 },
+            "bundle_id": "com.mitchellh.ghostty"
+          },
+          "focused": {
+            "app": { "pid": 42, "launched_at": 1000 },
+            "window_id": 101
+          },
+          "windows": [
+            {
+              "id": {
+                "app": { "pid": 42, "launched_at": 1000 },
+                "window_id": 101
+              },
+              "frame": { "x": 0, "y": 0, "width": 1440, "height": 900 }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "cycle": 2,
+      "mouse_down": false,
+      "applications": [
+        {
+          "status": "complete",
+          "app": {
+            "id": { "pid": 42, "launched_at": 1000 },
+            "bundle_id": "com.mitchellh.ghostty"
+          },
+          "focused": {
+            "app": { "pid": 42, "launched_at": 1000 },
+            "window_id": 102
+          },
+          "windows": [
+            {
+              "id": {
+                "app": { "pid": 42, "launched_at": 1000 },
+                "window_id": 102
+              },
+              "frame": { "x": 0, "y": 0, "width": 1440, "height": 900 }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

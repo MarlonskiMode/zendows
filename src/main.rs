@@ -1,0 +1,553 @@
+use std::{
+    collections::{HashMap, HashSet},
+    env, fs,
+    io::{self, Write},
+    process::ExitCode,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    thread,
+    time::Duration,
+};
+
+mod cli;
+
+use serde::{Deserialize, Serialize};
+use zendows::{
+    Engine, Model, NativeObservation, Reconciliation, ReconciliationEvidence, Settings, reconcile,
+};
+
+#[derive(Deserialize)]
+struct Replay {
+    #[serde(default)]
+    model: Model,
+    #[serde(default)]
+    evidence: ReconciliationEvidence,
+    settings: Settings,
+    observations: Vec<NativeObservation>,
+}
+
+#[derive(Serialize)]
+struct ReplayOutput {
+    steps: Vec<zendows::Reconciliation>,
+}
+
+#[cfg(target_os = "macos")]
+#[derive(Serialize)]
+struct SnapshotOutput {
+    observation: NativeObservation,
+    reconciliation: Reconciliation,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    apply_results: Option<Vec<zendows::macos::ApplyResult>>,
+}
+
+#[cfg(target_os = "macos")]
+#[derive(Serialize)]
+struct WatchOutput {
+    steps: Vec<SnapshotOutput>,
+}
+
+fn main() -> ExitCode {
+    let mut args = env::args();
+    let executable = args.next().unwrap_or_else(|| "zendows".into());
+    let Some(command) = args.next() else {
+        print_usage(&executable);
+        return ExitCode::from(2);
+    };
+    let arguments = args.collect::<Vec<_>>();
+    let rest = arguments.iter().map(String::as_str).collect::<Vec<_>>();
+    if let Some(outcome) = cli::try_run(&executable, &command, &rest) {
+        return outcome.into_exit_code();
+    }
+    #[cfg(target_os = "macos")]
+    let apply = rest.last() == Some(&"--apply");
+
+    let result = match (command.as_str(), rest.as_slice()) {
+        ("replay", [path]) => run_replay(path).and_then(to_json),
+        #[cfg(target_os = "macos")]
+        ("snapshot", []) => run_retile(false).and_then(to_json),
+        #[cfg(target_os = "macos")]
+        ("displays", []) => zendows::macos::outputs()
+            .map(|outputs| outputs.displays().to_vec())
+            .map_err(|error| error.to_string())
+            .and_then(to_json),
+        ("doctor", []) => run_doctor(None),
+        ("doctor", [hours]) => hours
+            .parse::<u64>()
+            .ok()
+            .filter(|hours| *hours > 0)
+            .ok_or_else(|| format!("hours must be a positive integer, got {hours:?}"))
+            .and_then(|hours| run_doctor(Some(hours))),
+        ("config-check", [path]) => zendows::config::load_path(std::path::Path::new(path))
+            .map(|_| "configuration is valid".into()),
+        #[cfg(target_os = "macos")]
+        ("ctl", _) => zendows::control::send(&arguments),
+        #[cfg(target_os = "macos")]
+        ("hud", []) => run_hud(),
+        #[cfg(target_os = "macos")]
+        ("retile", [] | ["--apply"]) => run_retile(apply).and_then(to_json),
+        // A lone positional "--apply" sets `apply` but always fails cycle parsing first.
+        #[cfg(target_os = "macos")]
+        ("watch", [cycles] | [cycles, "--apply"]) => parse_cycles(cycles)
+            .and_then(|cycles| run_watch(cycles, apply, None))
+            .and_then(to_json),
+        #[cfg(target_os = "macos")]
+        ("watch-window", [window_id, cycles] | [window_id, cycles, "--apply"]) => {
+            parse_window_id(window_id)
+                .and_then(|window_id| parse_cycles(cycles).map(|cycles| (window_id, cycles)))
+                .and_then(|(window_id, cycles)| run_watch(cycles, apply, Some(window_id)))
+                .and_then(to_json)
+        }
+        #[cfg(target_os = "macos")]
+        ("run", [] | ["--apply"]) => run_persistent(apply),
+        (known, _) if KNOWN_COMMANDS.contains(&known) => {
+            print_usage(&executable);
+            return ExitCode::from(2);
+        }
+        _ => {
+            eprintln!("unknown command: {command}");
+            print_usage(&executable);
+            return ExitCode::from(2);
+        }
+    };
+
+    match result {
+        Ok(output) => {
+            println!("{output}");
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("{error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+const KNOWN_COMMANDS: &[&str] = &[
+    "replay",
+    "config-check",
+    "doctor",
+    #[cfg(target_os = "macos")]
+    "snapshot",
+    #[cfg(target_os = "macos")]
+    "displays",
+    #[cfg(target_os = "macos")]
+    "ctl",
+    #[cfg(target_os = "macos")]
+    "hud",
+    #[cfg(target_os = "macos")]
+    "retile",
+    #[cfg(target_os = "macos")]
+    "watch",
+    #[cfg(target_os = "macos")]
+    "watch-window",
+    #[cfg(target_os = "macos")]
+    "run",
+];
+
+fn print_usage(executable: &str) {
+    eprintln!("{}", cli::help::root_usage(executable));
+}
+
+fn run_doctor(hours: Option<u64>) -> Result<String, String> {
+    let (live, rotated) = zendows::journal::default_paths().ok_or("HOME is unavailable")?;
+    let (lines, skipped) = zendows::journal::read(&[&rotated, &live])?;
+    if lines.is_empty() && skipped == 0 {
+        return Ok(format!(
+            "No arrangement journal at {} yet. It is written by a running Zendows agent.",
+            live.display()
+        ));
+    }
+    let now = zendows::journal::unix_millis();
+    let since = hours.map_or(0, |hours| now.saturating_sub(hours * 3_600_000));
+    Ok(zendows::journal::summarize(&lines, since, now, skipped))
+}
+
+#[cfg(target_os = "macos")]
+fn run_hud() -> Result<String, String> {
+    loop {
+        let source = zendows::control::send(&["debug".into()])?;
+        let debug: serde_json::Value =
+            serde_json::from_str(&source).map_err(|error| error.to_string())?;
+        print!("\x1b[2J\x1b[HZendows HUD  (Ctrl-C to close)\n\n");
+        for display in debug["displays"].as_array().into_iter().flatten() {
+            let frame = &display["frame"];
+            let layout = if display["fullscreen_layout"].as_bool() == Some(true) {
+                "Fullscreen Layout"
+            } else {
+                display["axis"].as_str().unwrap_or("unknown")
+            };
+            let workspace = display["workspace"]
+                .as_str()
+                .map(str::to_owned)
+                .unwrap_or_else(|| display["workspace"].to_string());
+            println!(
+                "{}  workspace {}  {}  @ {},{} {}x{}",
+                display["name"].as_str().unwrap_or("Display"),
+                workspace,
+                layout,
+                frame["x"].as_i64().unwrap_or_default(),
+                frame["y"].as_i64().unwrap_or_default(),
+                frame["width"].as_i64().unwrap_or_default(),
+                frame["height"].as_i64().unwrap_or_default(),
+            );
+            for tile in debug["tiles"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter(|tile| tile["workspace"] == display["workspace"])
+            {
+                let frame = &tile["frame"];
+                let window = &tile["window"];
+                let focused = if window == &debug["focused"] {
+                    "*"
+                } else {
+                    " "
+                };
+                println!(
+                    "  {focused} window {} (pid {})  {},{} {}x{}",
+                    window["window_id"].as_u64().unwrap_or_default(),
+                    window["app"]["pid"].as_i64().unwrap_or_default(),
+                    frame["x"].as_i64().unwrap_or_default(),
+                    frame["y"].as_i64().unwrap_or_default(),
+                    frame["width"].as_i64().unwrap_or_default(),
+                    frame["height"].as_i64().unwrap_or_default(),
+                );
+            }
+            println!();
+        }
+        println!("Directional targets:");
+        for direction in ["left", "down", "up", "right"] {
+            let target = &debug["targets"][direction];
+            if target.is_null() {
+                println!("  {direction:>5}: none");
+            } else {
+                println!(
+                    "  {direction:>5}: window {} (pid {})",
+                    target["window_id"].as_u64().unwrap_or_default(),
+                    target["app"]["pid"].as_i64().unwrap_or_default(),
+                );
+            }
+        }
+        io::stdout()
+            .flush()
+            .map_err(|error| format!("failed to render HUD: {error}"))?;
+        thread::sleep(Duration::from_millis(150));
+    }
+}
+
+fn parse_window_id(value: &str) -> Result<u32, String> {
+    value
+        .parse::<u32>()
+        .ok()
+        .filter(|window_id| *window_id > 0)
+        .ok_or_else(|| "window ID must be a positive integer".into())
+}
+
+fn parse_cycles(value: &str) -> Result<u64, String> {
+    value
+        .parse::<u64>()
+        .ok()
+        .filter(|cycles| *cycles > 0)
+        .ok_or_else(|| "cycles must be a positive integer".into())
+}
+
+fn to_json(value: impl Serialize) -> Result<String, String> {
+    serde_json::to_string_pretty(&value)
+        .map_err(|error| format!("failed to encode output: {error}"))
+}
+
+#[cfg(target_os = "macos")]
+fn run_retile(should_apply: bool) -> Result<SnapshotOutput, String> {
+    let (observation, settings) =
+        zendows::macos::snapshot(1).map_err(|error| error.to_string())?;
+    if should_apply
+        && observation
+            .applications
+            .iter()
+            .any(|app| matches!(app, zendows::AppObservation::Unavailable { .. }))
+    {
+        return Err("refusing to apply an incomplete window observation".into());
+    }
+    let reconciliation = reconcile(
+        &Model::default(),
+        &observation,
+        &ReconciliationEvidence::default(),
+        &settings,
+    );
+    let apply_results =
+        should_apply.then(|| zendows::macos::apply(&reconciliation.placements, &settings));
+    Ok(SnapshotOutput {
+        observation,
+        reconciliation,
+        apply_results,
+    })
+}
+
+#[cfg(target_os = "macos")]
+fn run_watch(
+    cycles: u64,
+    should_apply: bool,
+    initial_window_id: Option<u32>,
+) -> Result<WatchOutput, String> {
+    let mut engine = Engine::default();
+    let mut known_apps = HashMap::new();
+    let mut scope: Option<WindowScope> = None;
+    let mut steps = Vec::new();
+
+    for cycle in 1..=cycles {
+        engine.invalidate();
+        let ticket = engine.begin_cycle();
+        let (mut observation, mut settings) = match (initial_window_id, scope.as_ref()) {
+            (Some(window_id), None) => {
+                zendows::macos::snapshot_for_window(ticket.cycle, window_id)
+            }
+            (Some(_), Some(scope)) => {
+                zendows::macos::snapshot_in_output(ticket.cycle, scope.output)
+            }
+            (None, _) => zendows::macos::snapshot(ticket.cycle),
+        }
+        .map_err(|error| error.to_string())?;
+        if let Some(initial_window_id) = initial_window_id {
+            let active_scope = match &mut scope {
+                Some(scope) => scope,
+                None => scope.insert(WindowScope::discover(
+                    &observation,
+                    initial_window_id,
+                    settings.output,
+                )?),
+            };
+            active_scope.filter(&mut observation);
+            settings.output = active_scope.frame;
+        } else {
+            zendows::live::add_absent_applications(&mut observation, &mut known_apps);
+        }
+        let reconciliation = engine
+            .accept(ticket, &observation, &settings)
+            .map_err(|error| format!("stale synchronous cycle: {error:?}"))?;
+        let placements =
+            zendows::live::applicable_placements(&observation, &reconciliation, &settings);
+        let apply_results = should_apply.then(|| zendows::macos::apply(&placements, &settings));
+
+        steps.push(SnapshotOutput {
+            observation,
+            reconciliation,
+            apply_results,
+        });
+
+        if cycle < cycles {
+            thread::sleep(Duration::from_millis(250));
+        }
+    }
+    Ok(WatchOutput { steps })
+}
+
+#[cfg(target_os = "macos")]
+fn run_persistent(should_apply: bool) -> Result<String, String> {
+    let running = Arc::new(AtomicBool::new(true));
+    let stop = Arc::clone(&running);
+    ctrlc::set_handler(move || stop.store(false, Ordering::Release))
+        .map_err(|error| format!("failed to install signal handler: {error}"))?;
+
+    let mut engine = Engine::default();
+    let mut known_apps = HashMap::new();
+    let mut output = io::BufWriter::new(io::stdout().lock());
+    let mut completed_cycles = 0_u64;
+
+    while running.load(Ordering::Acquire) {
+        engine.invalidate();
+        let ticket = engine.begin_cycle();
+        let (mut observation, settings) = match zendows::macos::snapshot(ticket.cycle) {
+            Ok(snapshot) => snapshot,
+            Err(zendows::macos::SnapshotError::AccessibilityPermissionRequired) => {
+                return Err(
+                    "Accessibility permission is required for the persistent runtime".into(),
+                );
+            }
+            Err(error) => {
+                eprintln!(
+                    "{}",
+                    serde_json::json!({
+                        "type": "snapshot_error",
+                        "cycle": ticket.cycle,
+                        "error": error.to_string(),
+                    })
+                );
+                thread::sleep(Duration::from_millis(250));
+                continue;
+            }
+        };
+        if !running.load(Ordering::Acquire) {
+            engine.invalidate();
+            break;
+        }
+        zendows::live::add_absent_applications(&mut observation, &mut known_apps);
+        let reconciliation = engine
+            .accept(ticket, &observation, &settings)
+            .map_err(|error| format!("stale synchronous cycle: {error:?}"))?;
+        let placements =
+            zendows::live::applicable_placements(&observation, &reconciliation, &settings);
+        let apply_results = (should_apply && running.load(Ordering::Acquire)).then(|| {
+            zendows::macos::apply_while(&placements, &settings, || running.load(Ordering::Acquire))
+        });
+        let step = SnapshotOutput {
+            observation,
+            reconciliation,
+            apply_results,
+        };
+        serde_json::to_writer(
+            &mut output,
+            &serde_json::json!({ "type": "cycle", "step": step }),
+        )
+        .map_err(|error| format!("failed to encode runtime step: {error}"))?;
+        output
+            .write_all(b"\n")
+            .and_then(|()| output.flush())
+            .map_err(|error| format!("failed to write runtime step: {error}"))?;
+        completed_cycles += 1;
+
+        for _ in 0..10 {
+            if !running.load(Ordering::Acquire) {
+                break;
+            }
+            thread::sleep(Duration::from_millis(25));
+        }
+    }
+
+    Ok(serde_json::json!({
+        "type": "stopped",
+        "cycles": completed_cycles,
+        "revision": engine.revision(),
+    })
+    .to_string())
+}
+
+#[cfg(target_os = "macos")]
+struct WindowScope {
+    app: zendows::AppInstanceId,
+    bundle_id: String,
+    frame: zendows::Rect,
+    output: zendows::Rect,
+    excluded_window_ids: HashSet<u32>,
+    authorized_window_ids: HashSet<u32>,
+    missing_cycles: u8,
+}
+
+#[cfg(target_os = "macos")]
+impl WindowScope {
+    fn discover(
+        observation: &NativeObservation,
+        window_id: u32,
+        output: zendows::Rect,
+    ) -> Result<Self, String> {
+        observation
+            .applications
+            .iter()
+            .find_map(|app| match app {
+                zendows::AppObservation::Complete { app, windows, .. } => windows
+                    .iter()
+                    .find(|window| window.id.window_id == window_id)
+                    .map(|window| Self {
+                        app: app.id.clone(),
+                        bundle_id: app.bundle_id.clone(),
+                        frame: window.frame,
+                        output,
+                        excluded_window_ids: windows
+                            .iter()
+                            .filter(|existing| existing.id.window_id != window_id)
+                            .map(|existing| existing.id.window_id)
+                            .collect(),
+                        authorized_window_ids: HashSet::from([window_id]),
+                        missing_cycles: 0,
+                    }),
+                _ => None,
+            })
+            .ok_or_else(|| format!("window {window_id} is not currently eligible"))
+    }
+
+    fn filter(&mut self, observation: &mut NativeObservation) {
+        let mut scoped = observation
+            .applications
+            .drain(..)
+            .find(|app| app.app_id() == &self.app);
+        if let Some(zendows::AppObservation::Complete {
+            focused, windows, ..
+        }) = &mut scoped
+        {
+            windows.retain(|window| {
+                !self.excluded_window_ids.contains(&window.id.window_id)
+                    && window.frame.approximately_equals(self.frame, 100)
+            });
+            let selected = focused
+                .as_ref()
+                .and_then(|focused| windows.iter().find(|window| window.id == *focused))
+                .or_else(|| {
+                    windows
+                        .iter()
+                        .find(|window| self.authorized_window_ids.contains(&window.id.window_id))
+                })
+                .or_else(|| (windows.len() == 1).then(|| &windows[0]))
+                .map(|window| window.id.clone());
+            windows.retain(|window| selected.as_ref() == Some(&window.id));
+            if let Some(selected) = selected {
+                self.authorized_window_ids.insert(selected.window_id);
+                *focused = focused.take().filter(|focused| focused == &selected);
+                self.missing_cycles = 0;
+                if let Some(scoped) = scoped {
+                    observation.applications = vec![scoped];
+                }
+                return;
+            }
+        }
+        self.missing_cycles = self.missing_cycles.saturating_add(1);
+        observation.applications = vec![if self.missing_cycles <= 8 {
+            zendows::AppObservation::Unavailable {
+                app: self.app.clone(),
+                error: "scoped window is settling or absent".into(),
+            }
+        } else {
+            zendows::AppObservation::Complete {
+                app: zendows::ObservedApplication {
+                    id: self.app.clone(),
+                    bundle_id: self.bundle_id.clone(),
+                },
+                focused: None,
+                windows: Vec::new(),
+            }
+        }];
+    }
+}
+
+fn run_replay(path: &str) -> Result<ReplayOutput, String> {
+    let input =
+        fs::read_to_string(path).map_err(|error| format!("failed to read {path}: {error}"))?;
+    let replay: Replay =
+        serde_json::from_str(&input).map_err(|error| format!("invalid fixture {path}: {error}"))?;
+    replay
+        .model
+        .validate()
+        .map_err(|error| format!("invalid fixture model: {error}"))?;
+    if replay.settings.output.width <= 0
+        || replay.settings.output.height <= 0
+        || replay.settings.frame_tolerance < 0
+    {
+        return Err("invalid fixture settings".into());
+    }
+    let mut model = replay.model;
+    let mut evidence = replay.evidence;
+    let mut steps = Vec::new();
+
+    for observation in replay.observations {
+        let result = reconcile(&model, &observation, &evidence, &replay.settings);
+        evidence.previous_placements = result
+            .placements
+            .iter()
+            .map(|placement| (placement.slot, placement.frame))
+            .collect();
+        model = result.model.clone();
+        steps.push(result);
+    }
+
+    Ok(ReplayOutput { steps })
+}

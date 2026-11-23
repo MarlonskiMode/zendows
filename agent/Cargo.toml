@@ -1,0 +1,52 @@
+[package]
+name = "zendows-agent"
+version = "0.3.3"
+edition = "2024"
+rust-version = "1.100"
+license = "MIT"
+description = "Zendows's macOS menu-bar and Rune host"
+publish = false
+
+[dependencies]
+zendows = { path = ".." }
+procwatch = { git = "https://github.com/anomalyco/rune", rev = "1de0710548e53bb4aa6ef05cd4ca2c69b8fa8323" }
+rune = { git = "https://github.com/anomalyco/rune", rev = "1de0710548e53bb4aa6ef05cd4ca2c69b8fa8323" }
+rune-kit = { git = "https://github.com/anomalyco/rune", rev = "1de0710548e53bb4aa6ef05cd4ca2c69b8fa8323" }
+rune-mac = { git = "https://github.com/anomalyco/rune", rev = "1de0710548e53bb4aa6ef05cd4ca2c69b8fa8323" }
+rune-theme-opencode = { git = "https://github.com/anomalyco/rune", rev = "1de0710548e53bb4aa6ef05cd4ca2c69b8fa8323" }
+toml_edit = "0.23"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = "0.6"
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = [
+  "std",
+  "block2",
+  "objc2-core-foundation",
+  "NSAccessibility",
+  "NSApplication",
+  "NSBitmapImageRep",
+  "NSEvent",
+  "NSGraphics",
+  "NSGraphicsContext",
+  "NSImage",
+  "NSImageRep",
+  "NSResponder",
+  "NSRunningApplication",
+  "NSWindow",
+  "NSWorkspace",
+] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = [
+  "std",
+  "block2",
+  "NSArray",
+  "NSFileManager",
+  "NSGeometry",
+  "NSRunLoop",
+  "NSString",
+  "NSTimer",
+  "NSURL",
+] }
+
+[lints]
+workspace = true

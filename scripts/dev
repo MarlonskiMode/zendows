@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Dev loop: every save under src/, agent/, native/, app/ or the Cargo files rebuilds the signed
+# bundle and swaps it into /Applications with install-app.sh, which restores every window before
+# the old agent quits and resumes tiling in the new one, so workspaces and layouts come back as
+# they were.
+#   scripts/dev            build and install once, then on every save
+#   scripts/dev --once     build and install once
+set -uo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+stamp() { find src agent native app Cargo.toml Cargo.lock build.rs -type f -exec stat -f '%m %N' {} + 2>/dev/null | md5; }
+install() {
+  echo "$(date '+%H:%M:%S') building"
+  if bundle=$(scripts/build-app.sh | tail -n 1) && [ -d "$bundle/Contents" ] \
+    && scripts/install-app.sh --bundle "$bundle" >/dev/null; then
+    echo "$(date '+%H:%M:%S') installed $(git rev-parse --short HEAD)$(git diff --quiet || echo '+dirty')"
+  else
+    echo "$(date '+%H:%M:%S') build or install failed; waiting for the next save"
+  fi
+}
+last=$(stamp)
+install
+[ "${1:-}" = "--once" ] && exit 0
+while true; do
+  sleep 1
+  now=$(stamp)
+  [ "$now" = "$last" ] && continue
+  # Let a burst of saves settle before building.
+  sleep 1
+  last=$(stamp)
+  install
+done

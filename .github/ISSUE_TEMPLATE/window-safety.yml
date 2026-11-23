@@ -1,0 +1,62 @@
+name: Live window-management safety report
+description: Report window loss, unsafe movement, failed restoration, or inability to regain manual control
+title: "safety: "
+labels: [bug, safety]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Stop automatic management before reproducing if doing so is safe. Do not experiment with unsaved work. Use disposable windows and redact all private titles, document names, URLs, account names, and application/window identifiers from diagnostics.
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - Window positions were not restored
+        - A window became inaccessible or moved to an unexpected display/space
+        - Manual control could not be regained promptly
+        - Unsaved work or application state may have been lost
+        - Other safety impact
+    validations:
+      required: true
+  - type: textarea
+    id: sequence
+    attributes:
+      label: Safe reproduction sequence
+      description: Describe the sequence using generic app labels and disposable content. State the automatic/paused/restoring mode transitions.
+    validations:
+      required: true
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Recovery attempted and outcome
+      description: Include whether pause, quit, restart, or macOS controls restored the windows.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Zendows version or commit
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: macOS version, architecture, and display/space count
+      placeholder: macOS 14.x, Apple silicon, 2 displays, 3 spaces
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Never include private window titles, document names, URLs, account names, filesystem paths, or stable application/window identifiers.
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Safety and privacy confirmation
+      options:
+        - label: I will not reproduce this with unsaved or irreplaceable work.
+          required: true
+        - label: I have removed private titles, identifiers, paths, URLs, and account information.
+          required: true

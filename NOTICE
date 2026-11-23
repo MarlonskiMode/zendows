@@ -1,0 +1,13 @@
+Zendows
+=======
+
+This repository is a rename fork of Spaceman:
+
+  https://github.com/anomalyco/spaceman
+
+Spaceman is licensed under the MIT License. Copyright (c) 2026 Kit Langton.
+The full license text is in LICENSE.
+
+Zendows rebrands binaries, bundle identifiers, paths, and user-facing strings for personal use.
+It is not an official Anomaly / Spaceman release, and it does not use Anomaly’s Developer ID,
+notarization, or release-service endpoints.

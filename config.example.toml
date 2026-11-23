@@ -1,0 +1,50 @@
+# Zendows configuration schema version. Only version 1 is accepted.
+version = 1
+
+# Optional UI preferences. The non-activating Workspace HUD capsule is on by default.
+# hud_style is "icons" (each workspace's number and its apps' icons, the default) or
+# "layouts" (each workspace's layout with app icons). update_channel is "stable" (releases,
+# the default) or "dev" (a build of every change merged to dev).
+[settings]
+hud = true
+hud_style = "icons"
+update_channel = "stable"
+
+# Rules are optional, ordered, and first-match wins. Every matcher present in a
+# rule must match exactly. Valid actions are "float", "route", and "ignore".
+[[rules]]
+bundle_id = "com.apple.systempreferences"
+action = "float"
+
+# Applications that insist on positioning their own windows are best ignored:
+# never tiled, never owned by a workspace, never moved or parked.
+[[rules]]
+bundle_id = "com.granola.app"
+action = "ignore"
+
+[[rules]]
+bundle_id = "com.example.Application"
+title = "Preferences"
+action = "float"
+
+[[rules]]
+bundle_id = "com.tinyspeck.slackmacgap"
+action = "route"
+workspace = 2
+
+# Named workspaces A-Z are opt-in. Configuring one registers Option+letter to
+# switch and Option+Shift+letter to move the focused window there.
+[[rules]]
+bundle_id = "ai.opencode.desktop"
+action = "route"
+workspace = "D"
+
+# Workspace assignments are optional. monitor accepts "main", "secondary", a
+# display UUID, or an exact display name from `zendows displays`.
+[[workspaces]]
+workspace = 9
+monitor = "main"
+
+[[workspaces]]
+workspace = "D"
+monitor = "main"

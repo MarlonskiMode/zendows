@@ -1,0 +1,102 @@
+# Zendows
+
+> Zendows is a macOS tiling window manager for Apple silicon built around stable logical windows.
+> Version 0.3.3, bundle ID `com.marlonskimode.zendows`, signed with Anomaly's Developer ID and notarized.
+> Source, issues and releases: <https://github.com/MarlonskiMode/zendows>.
+
+Zendows treats a logical tile slot as product identity rather than tying layout state to a single physical `AXWindow`. When a native tabbed window (such as Ghostty) replaces its physical Accessibility window identity on tab switch, Zendows keeps the logical slot, split tree weight, workspace, and focus intent intact.
+
+## Requirements and Installation
+
+- **Platform:** Apple silicon Mac running macOS 14 or later. No System Integrity Protection (SIP) changes are required.
+- **Before launching:** Disable AeroSpace (`aerospace enable off`), yabai, Amethyst, or any other window manager so two managers do not move the same windows.
+- **Download:** `https://github.com/MarlonskiMode/zendows/download/macos-arm64` (verify against `https://github.com/MarlonskiMode/zendows/download/macos-arm64.sha256`), or install the latest build from Terminal:
+
+  ```sh
+  curl -fL https://github.com/MarlonskiMode/zendows/download/macos-arm64 -o /tmp/Zendows.zip \
+    && ditto -x -k /tmp/Zendows.zip /Applications && open /Applications/Zendows.app
+  ```
+
+- **Setup:** Move `Zendows.app` to `/Applications` and open it. A three-step tour runs: `Welcome`, `Give Zendows window access`, then `You're all set`. Grant Accessibility in **System Settings > Privacy & Security**, optionally enable `Launch at Login`, and press `Start Tiling`. Tiling stays paused while the tour is open, so granting permission never rearranges windows behind it.
+
+  The permission list is named **Accessibility** through macOS 26, **Device Control and Data Access** on macOS 27.0 through 27.2, and **System & App Protection Override** on macOS 27.3 and later. On 27.3 and later System Settings refuses dragged app tiles: click the Privacy & Security notification, or use the list's `+` button. Optionally link `/Applications/Zendows.app/Contents/MacOS/zendows` to `~/.local/bin/zendows`.
+
+- **Updates:** Release builds check Anomaly's release service (`https://example.invalid/zendows-updates/desktop/<channel>.json`), verify the zip's size, SHA-256, bundle ID and Developer ID, and offer `Install & Restart` in the menu bar and Zendows Settings. Installing restores every parked window first, then swaps the bundle and relaunches.
+
+## Keyboard Shortcuts
+
+- `Option+1` … `Option+9`, `Option+0`: switch to workspace `1` … `10` (`1`–`5` default to the main display; `6`–`10` default to the secondary display)
+- `Option+Shift+1` … `Option+Shift+0`: move the focused window to workspace `1` … `10`
+- `Option+A` … `Option+Z`: switch to an opt-in named workspace (`A`–`Z`)
+- `Option+Shift+A` … `Option+Shift+Z`: move the focused window to a named workspace
+- `Option+Tab`: toggle back and forth to the previous workspace on the focused display
+- `Option+\``: focus the next tiled window in the workspace
+- `Option+H/J/K/L`: focus left / down / up / right across tiles and displays
+- `Option+Shift+H/J/K/L`: move or nest the focused tile left / down / up / right
+- `Option+/`: toggle the workspace's root split axis (horizontal / vertical)
+- `Option+-` / `Option+=`: shrink or grow the focused tile by 50 pixels
+- `Option+Shift+F`: toggle workspace-wide Fullscreen Layout without entering macOS native fullscreen Spaces
+- Three-finger swipe left / right: next / previous occupied workspace on the display under the pointer
+
+While you switch or move a window, a small bar on each display shows its workspaces as numbers with their apps' icons, with a marker on the current one (`[settings] hud_style`).
+
+## Configuration (`~/Library/Application Support/Zendows/config.toml`)
+
+Zendows reads ordered first-match rules and workspace display assignments from `~/Library/Application Support/Zendows/config.toml` (or `$ZENDOWS_CONFIG`), and reloads rule, display and HUD edits when the file changes:
+
+```toml
+version = 1
+
+[[workspaces]]
+workspace = 1
+monitor = "main"
+
+[[workspaces]]
+workspace = "C"
+monitor = "Studio Display"
+
+[[rules]]
+bundle_id = "com.tinyspeck.slackmacgap"
+action = "route"
+workspace = "C"
+
+[[rules]]
+bundle_id = "com.apple.systempreferences"
+action = "float"
+
+[[rules]]
+bundle_id = "com.example.Overlay"
+title = "Quick Open"
+action = "ignore"
+```
+
+Rule actions:
+
+- `route`: send matching windows to `workspace` (`1`–`10` or `"A"`–`"Z"`). Bundle-only routes apply to an app's initial window while keeping secondary windows on the active workspace; title-scoped routes also match secondary windows.
+- `float`: keep matching windows associated with their workspace without tiling or resizing them.
+- `ignore`: never adopt, tile, or park matching windows.
+
+Edits to rules, display assignments and `[settings]` apply when the file changes; a newly referenced named-workspace letter registers its shortcut on the next app start. The Workspace HUD is on by default (`[settings] hud = true`) and draws `hud_style = "icons"` (numbers and app icons) or `"layouts"`.
+
+Validate a config file with `zendows config-check "$HOME/Library/Application Support/Zendows/config.toml"`, and list displays with `zendows displays`.
+
+## CLI and Diagnostics
+
+The bundled `zendows` CLI communicates with the running agent over an owner-only (`0600`) Unix domain socket in `~/Library/Application Support/Zendows/control.sock`:
+
+- `zendows ctl status`: print active workspaces, tiling state, and window counts
+- `zendows ctl switch <workspace>` / `zendows ctl move <workspace>`: switch workspaces or move the focused window
+- `zendows ctl focus <left|down|up|right|next>` / `zendows ctl move-direction <left|down|up|right>`
+- `zendows ctl layout` / `zendows ctl fullscreen` / `zendows ctl balance` / `zendows ctl resize <shrink|grow>`
+- `zendows ctl pause` / `zendows ctl resume` / `zendows ctl retile` / `zendows ctl restart` / `zendows ctl quit`
+- `zendows ctl move-app <bundle-id> <workspace>`: move every current window of an app
+- `zendows ctl debug` / `zendows hud`: print sanitized runtime state; never window titles
+- `zendows ctl wrong`: mark the journal and snapshot the arrangement at that moment
+- `zendows doctor [hours]`: summarize the local arrangement and anomaly journal, with or without the agent running
+
+## Recovery and Privacy Guarantees
+
+- **Durable restoration:** Zendows persists each window's original on-screen frame to `parked-windows.json` before parking it for an inactive workspace, and restores parked windows before pausing, quitting, or installing an update.
+- **Relaunch recall:** Per-bundle window placements are remembered across app restarts and reboots without storing window titles.
+- **Privacy:** Window titles are used only in memory for optional `title` rule matching and never enter persisted state, logs, journals, debug snapshots, or CLI output. Zendows sends no telemetry.
+- **Recovery:** Preserve `parked-windows.json` until pause or quit restoration is confirmed. Reopen the same installed app after a crash and let it restore before deleting or editing state.
