@@ -1,8 +1,8 @@
 # Controls
 
-Spaceman registers global hotkeys while automatic tiling is enabled. Character keys follow the
-current macOS input source; Spaceman refreshes registrations after an input-source change. An invalid
-layout prevents startup registration and leaves tiling paused. During a layout change, Spaceman keeps
+Zendows registers global hotkeys while automatic tiling is enabled. Character keys follow the
+current macOS input source; Zendows refreshes registrations after an input-source change. An invalid
+layout prevents startup registration and leaves tiling paused. During a layout change, Zendows keeps
 the existing registrations if it cannot construct a replacement plan; if replacement registration
 fails after the old registrations are released, it pauses and reports `Hotkeys unavailable`.
 
@@ -25,14 +25,14 @@ fails after the old registrations are released, it pauses and reports `Hotkeys u
 
 A three-finger horizontal swipe steps through the workspaces that the display's menu section lists
 (the visible one and every one holding windows), stopping at either end. Swiping left goes to the
-next one, as with macOS Spaces. Spaceman only listens to the trackpad, so macOS still acts on the
+next one, as with macOS Spaces. Zendows only listens to the trackpad, so macOS still acts on the
 same swipe: set "Swipe between full-screen applications" to four fingers or off in Trackpad
 settings. Four-finger swipes and vertical swipes are left to macOS.
 
 Named workspace shortcuts are registered only when referenced by config. If a configured letter
 overlaps a built-in shortcut, the workspace shortcut takes precedence.
 
-Spaceman remembers the last-focused logical tile in each workspace and restores that focus when the
+Zendows remembers the last-focused logical tile in each workspace and restores that focus when the
 workspace becomes active again. Pressing an already-active workspace shortcut preserves the current
 focus when one of that workspace's windows is already focused; otherwise it focuses the remembered
 tile.
@@ -45,9 +45,9 @@ Fullscreen Layout, `Option+H`/`Option+K` step to the previous tile and `Option+L
 next one in that order without wrapping; past either end of the stack they continue to the adjacent
 display, as in a split layout. Leaving the workspace hides its windows back to front, so stacked
 windows are never uncovered mid-switch.
-Command-backtick continues to use macOS's same-application window cycle, and Spaceman remembers the
+Command-backtick continues to use macOS's same-application window cycle, and Zendows remembers the
 resulting focus. Press `Option+Shift+F` again to restore the unchanged split layout. Fullscreen Layout
-and its active tile survive workspace switches, native-tab physical-window replacement, and Spaceman
+and its active tile survive workspace switches, native-tab physical-window replacement, and Zendows
 restarts. `Option+/` exits Fullscreen Layout, toggles the preserved split axis, and immediately applies
 the resulting normal layout. Keyboard resize, balance, and tile reordering require leaving Fullscreen
 Layout first. Pointer dragging and resizing are ignored while the mode is active. Floating windows are
@@ -59,11 +59,11 @@ window's workspace, so it parks and restores with a switch and survives an agent
 when the window closes. A floating window moves, resizes, and moves between workspaces like any
 other window. Press `Option+Shift+Space` again to put it back on the tiles, where it joins them in
 stable order. Windows that a `float` rule keeps floating, or that their application will not let
-Spaceman resize, stay floating; toggle them after removing the rule instead.
+Zendows resize, stay floating; toggle them after removing the rule instead.
 
 Dragging a managed tile over a sibling swaps it. Dropping near a tile edge can create a nested split;
 dropping onto another display can move it to that display's active workspace. Resizing a managed
-window with the pointer updates the relevant split weights. Spaceman previews the rest of the layout
+window with the pointer updates the relevant split weights. Zendows previews the rest of the layout
 during the gesture and applies the final result on mouse-up.
 
 While the worker is busy, keyboard commands and completed pointer gestures are queued in arrival
@@ -93,8 +93,8 @@ The menu-bar control shows active workspace/layout glyphs and runtime errors. It
 - `Launch at Login`, shown checked when macOS has enabled the signed app bundle;
 - `Settings...` (`⌘,`), opening the Rune Settings window (`General`, `Rules`, `Workspaces`, `Shortcuts`, and `Activity`, plus `⇧⌘D` Playground);
 - `Check for Updates...`, which checks and opens Settings (its sidebar and `General > Updates` show
-  the result), or `Install Spaceman <version> and Restart` once an update is downloaded and verified;
-- `Quit Spaceman` (`⌘Q`).
+  the result), or `Install Zendows <version> and Restart` once an update is downloaded and verified;
+- `Quit Zendows` (`⌘Q`).
 
 If macOS reports that the login item requires approval, the menu label says
 `Launch at Login (Approval Required...)`; choosing it opens Login Items settings. Registration does
@@ -102,47 +102,47 @@ not bypass macOS consent and does not affect the currently running process.
 
 Pausing, quitting, and external macOS termination requests restore parked windows before completing.
 Restoration retries are visible in the menu status. Installing an update uses the same restoration
-gate: Spaceman swaps in the new bundle and relaunches only after every parked window is restored and
-its recovery metadata is durably removed. If the install then fails, Spaceman keeps running and
+gate: Zendows swaps in the new bundle and relaunches only after every parked window is restored and
+its recovery metadata is durably removed. If the install then fails, Zendows keeps running and
 resumes tiling. Quitting with an update ready installs it the same way, after the restore, for the
 next launch. `Settings > General > Updates` shows the running version and the updater's state,
 and picks the release channel (`Stable` or `Dev`, `[settings] update_channel`, default `Stable`).
 Picking a channel other than the running build's offers `Switch to Dev` (or `Switch to Stable`),
-and a copy Spaceman can't replace offers `Download`.
+and a copy Zendows can't replace offers `Download`.
 
 ## CLI
 
-The installed CLI is `~/.local/bin/spaceman`. Add `~/.local/bin` to `PATH`, or invoke that absolute
+The installed CLI is `~/.local/bin/zendows`. Add `~/.local/bin` to `PATH`, or invoke that absolute
 path. Commands that alter layouts require automatic tiling to be enabled.
 
 ```sh
-spaceman ctl status
-spaceman ctl debug
-spaceman ctl switch 2
-spaceman ctl back-and-forth
-spaceman ctl move-workspace
-spaceman ctl move-workspace prev
-spaceman ctl move-workspace secondary
-spaceman ctl move 7
-spaceman ctl move-app com.tinyspeck.slackmacgap 6
-spaceman ctl focus left
-spaceman ctl focus next
-spaceman ctl move-direction right
-spaceman ctl layout
-spaceman ctl fullscreen
-spaceman ctl float
-spaceman ctl resize shrink
-spaceman ctl resize grow
-spaceman ctl balance
-spaceman ctl pause
-spaceman ctl resume
-spaceman ctl retile
-spaceman ctl wrong
-spaceman ctl restart
-spaceman ctl quit
-spaceman hud
-spaceman doctor
-spaceman doctor 24
+zendows ctl status
+zendows ctl debug
+zendows ctl switch 2
+zendows ctl back-and-forth
+zendows ctl move-workspace
+zendows ctl move-workspace prev
+zendows ctl move-workspace secondary
+zendows ctl move 7
+zendows ctl move-app com.tinyspeck.slackmacgap 6
+zendows ctl focus left
+zendows ctl focus next
+zendows ctl move-direction right
+zendows ctl layout
+zendows ctl fullscreen
+zendows ctl float
+zendows ctl resize shrink
+zendows ctl resize grow
+zendows ctl balance
+zendows ctl pause
+zendows ctl resume
+zendows ctl retile
+zendows ctl wrong
+zendows ctl restart
+zendows ctl quit
+zendows hud
+zendows doctor
+zendows doctor 24
 ```
 
 Directions are `left`, `down`, `up`, and `right`. `focus next` is Option-backtick,
@@ -159,7 +159,7 @@ parking positions and are therefore left visible across workspace switches for t
 
 `doctor` summarizes the arrangement journal (all of it, or the last N hours): agent starts and their
 loaded state, exit restorations, remembered placements recalled or left unclaimed, wrong placements
-(windows the user moved to another workspace by hand within 120 seconds of Spaceman placing them, by
+(windows the user moved to another workspace by hand within 120 seconds of Zendows placing them, by
 placement source: active workspace, recall, or rule), the times `ctl wrong` was run, and every
 model/screen disagreement that lasted at least three seconds, grouped by kind with counts, total and
 longest durations, and the applications involved. It ends with the last known per-workspace
@@ -176,6 +176,6 @@ arrangement. It reads files directly and works while the agent is stopped. The j
 | `missing` | owned, but the window server no longer lists it |
 | `parking_exempt` | left visible across switches after repeatedly un-parking itself |
 
-The agent listens at `~/Library/Application Support/Spaceman/control.sock`; both socket and lock file
+The agent listens at `~/Library/Application Support/Zendows/control.sock`; both socket and lock file
 are mode `0600`. Requests are newline-delimited, limited to 4 KiB, and served locally over a Unix
 socket. The lock prevents two agents from running at once.

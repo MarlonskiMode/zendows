@@ -2,7 +2,7 @@
 
 use std::{cell::Cell, collections::BTreeSet};
 
-use spaceman::{WorkspaceId, app::UiHudDisplay};
+use zendows::{WorkspaceId, app::UiHudDisplay};
 
 use super::pill::HudView;
 
@@ -181,7 +181,7 @@ impl HudFlow {
         resurrected || was_active != self.is_held()
     }
 
-    /// Begins a smooth exit immediately (e.g. after opening Spaceman Settings from the pill).
+    /// Begins a smooth exit immediately (e.g. after opening Zendows Settings from the pill).
     pub fn leave_now(&mut self, now_ms: u64) -> bool {
         self.hovered = false;
         self.menu_open = false;

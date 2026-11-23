@@ -5,7 +5,7 @@ mod shortcuts;
 pub(crate) mod workspaces;
 
 use rune::{El, Icon};
-use spaceman::app::{UiLaunchAtLogin, UiUpdateStatus};
+use zendows::app::{UiLaunchAtLogin, UiUpdateStatus};
 
 use crate::{
     Ui, activity,
@@ -15,22 +15,22 @@ use crate::{
 };
 
 static GENERAL_ICON: Icon = Icon {
-    name: "spaceman-general",
+    name: "zendows-general",
     view: 16.0,
     body: include_str!("../assets/general.svg"),
 };
 static RULES_ICON: Icon = Icon {
-    name: "spaceman-rules",
+    name: "zendows-rules",
     view: 16.0,
     body: include_str!("../assets/rules.svg"),
 };
 static WORKSPACES_ICON: Icon = Icon {
-    name: "spaceman-workspaces",
+    name: "zendows-workspaces",
     view: 16.0,
     body: include_str!("../assets/workspaces.svg"),
 };
 static ACTIVITY_ICON: Icon = Icon {
-    name: "spaceman-activity",
+    name: "zendows-activity",
     view: 24.0,
     body: include_str!("../assets/activity.svg"),
 };
@@ -123,7 +123,7 @@ pub(crate) const SCENES: &[Scene] = &[
     ("workspaces-three-displays", |ui| {
         reset_fixture(ui, Pane::Workspaces);
         ui.displays = workspaces::fixture_three();
-        let nine = spaceman::WorkspaceId::new(9).unwrap_or(spaceman::WorkspaceId::SIX);
+        let nine = zendows::WorkspaceId::new(9).unwrap_or(zendows::WorkspaceId::SIX);
         ui.edit(|doc| doc.set_monitor(nine, Some(workspaces::THIRD_FIXTURE_ID)));
     }),
     // A fourth monitor: the picker numbers the last two so it stays one readable row.
@@ -134,7 +134,7 @@ pub(crate) const SCENES: &[Scene] = &[
     // The third monitor unplugged: its saved assignment keeps its own card.
     ("workspaces-unplugged", |ui| {
         reset_fixture(ui, Pane::Workspaces);
-        let nine = spaceman::WorkspaceId::new(9).unwrap_or(spaceman::WorkspaceId::SIX);
+        let nine = zendows::WorkspaceId::new(9).unwrap_or(zendows::WorkspaceId::SIX);
         ui.edit(|doc| doc.set_monitor(nine, Some(workspaces::THIRD_FIXTURE_ID)));
     }),
     ("shortcuts", |ui| reset_fixture(ui, Pane::Shortcuts)),

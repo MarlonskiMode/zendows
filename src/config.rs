@@ -364,17 +364,17 @@ pub fn now() -> std::time::Duration {
         .unwrap_or_default()
 }
 
-/// Optional `SPACEMAN_MANAGED_DISPLAY` override read at startup.
+/// Optional `ZENDOWS_MANAGED_DISPLAY` override read at startup.
 #[expect(
     clippy::disallowed_methods,
     reason = "startup environment variables are read in config.rs"
 )]
 pub fn managed_display_env() -> Result<Option<String>, String> {
-    match std::env::var("SPACEMAN_MANAGED_DISPLAY") {
+    match std::env::var("ZENDOWS_MANAGED_DISPLAY") {
         Ok(value) => Ok(Some(value)),
         Err(std::env::VarError::NotPresent) => Ok(None),
         Err(std::env::VarError::NotUnicode(_)) => {
-            Err("SPACEMAN_MANAGED_DISPLAY must be valid UTF-8".into())
+            Err("ZENDOWS_MANAGED_DISPLAY must be valid UTF-8".into())
         }
     }
 }
@@ -386,18 +386,18 @@ pub fn modified() -> Option<std::time::SystemTime> {
 }
 
 pub fn config_path() -> Option<PathBuf> {
-    std::env::var_os("SPACEMAN_CONFIG")
+    std::env::var_os("ZENDOWS_CONFIG")
         .map(PathBuf::from)
         .or_else(|| application_support_path("config.toml"))
 }
 
 pub fn application_support_path(file: &str) -> Option<PathBuf> {
-    std::env::var_os("SPACEMAN_APPLICATION_SUPPORT")
+    std::env::var_os("ZENDOWS_APPLICATION_SUPPORT")
         .map(PathBuf::from)
         .or_else(|| {
             std::env::var_os("HOME")
                 .map(PathBuf::from)
-                .map(|home| home.join("Library/Application Support/Spaceman"))
+                .map(|home| home.join("Library/Application Support/Zendows"))
         })
         .map(|directory| directory.join(file))
 }
@@ -679,7 +679,7 @@ monitor = "main"
     #[test]
     fn save_workspace_monitor_persists_overrides_and_clears_built_in_defaults() {
         let dir = std::env::temp_dir().join(format!(
-            "spaceman-config-save-{}-{}",
+            "zendows-config-save-{}-{}",
             std::process::id(),
             now().as_nanos()
         ));

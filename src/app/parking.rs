@@ -3,7 +3,7 @@ use super::*;
 /// How long a fresh park must settle before an on-screen observation of that
 /// window is trusted as a genuine reappearance rather than in-flight movement.
 const PARK_SETTLE_GRACE: Duration = Duration::from_secs(2);
-/// Accessibility lookups fail transiently, notably right after Spaceman or an
+/// Accessibility lookups fail transiently, notably right after Zendows or an
 /// application launches. A window the window server still lists keeps its
 /// slot for this long before an Accessibility "gone" is believed.
 pub(super) const INACCESSIBLE_GRACE: Duration = Duration::from_secs(30);
@@ -128,7 +128,7 @@ impl<B: WorkspaceBackend> WorkspaceRuntime<B> {
     }
 
     /// Recover a newly identified frontmost window that was relaunched at the
-    /// exact one-pixel edge position produced by Spaceman parking. Its former
+    /// exact one-pixel edge position produced by Zendows parking. Its former
     /// physical identity (and recovery entry) no longer exists, so revealing it
     /// lets normal reconciliation adopt and tile it again.
     pub(super) fn recover_frontmost_stale_parked_window(

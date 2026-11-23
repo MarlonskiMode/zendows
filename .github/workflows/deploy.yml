@@ -1,10 +1,10 @@
 name: Deploy
 
-# Builds website/ and deploys its Worker (the site at /spaceman and the
-# release-service download redirect at /spaceman/download/*). A push (or a
-# dispatch) on dev deploys the dev site (https://dev.anoma.ly/spaceman/); on
+# Builds website/ and deploys its Worker (the site at /zendows and the
+# release-service download redirect at /zendows/download/*). A push (or a
+# dispatch) on dev deploys the dev site (https://dev.github.com/MarlonskiMode/zendows/); on
 # production, which moves only by a fast-forward from dev, the production site
-# (https://anoma.ly/spaceman/). The mode always follows the branch. Split like
+# (https://github.com/MarlonskiMode/zendows/). The mode always follows the branch. Split like
 # Release (docs/releasing.md):
 #
 # - build runs repository code (bun install, vite build, prerender) with no
@@ -13,7 +13,7 @@ name: Deploy
 # - deploy runs in the mode's environment (dev or production, each admitting
 #   only its own branch) and mints a short-lived Cloudflare token for that
 #   mode's Worker from the token issuer after assuming the environment's role,
-#   github/spaceman-<mode> (.github/release/cloudflare-token.sh). The AWS
+#   github/zendows-<mode> (.github/release/cloudflare-token.sh). The AWS
 #   session is a step output given only to the token step, and the token only
 #   to the Deploy step. It checks out only .github/release/, verifies the
 #   artifact against that digest, and runs only .github/release/deploy-site.sh,
@@ -22,16 +22,9 @@ name: Deploy
 #   wrangler CLI locked in .github/release/wrangler/.
 # - verify checks the live site, download redirect, checksum, and static
 #   metadata endpoints without secrets.
+# Zendows fork: upstream deployed to anoma.ly Cloudflare Workers with Anomaly
+# AWS/OIDC credentials. Disabled until a private site host is configured.
 on:
-  push:
-    branches: [dev, production]
-    paths:
-      - "website/**"
-      - "skills/spaceman-setup/SKILL.md"
-      - ".github/workflows/deploy.yml"
-      - ".github/release/deploy-site.sh"
-      - ".github/release/cloudflare-token.sh"
-      - ".github/release/wrangler/**"
   workflow_dispatch:
 
 permissions:
@@ -43,7 +36,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/production'
+    if: false
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
@@ -122,8 +115,8 @@ jobs:
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
-          role-to-assume: arn:aws:iam::604439173067:role/github/spaceman-${{ env.MODE }}
-          role-session-name: spaceman-${{ github.run_id }}
+          role-to-assume: arn:aws:iam::604439173067:role/github/zendows-${{ env.MODE }}
+          role-session-name: zendows-${{ github.run_id }}
           role-duration-seconds: 900
           aws-region: us-east-1
           output-env-credentials: false
@@ -153,7 +146,7 @@ jobs:
       - name: Check the live site and download endpoints
         run: |
           host=$([ "$MODE" = dev ] && echo dev.anoma.ly || echo anoma.ly)
-          base="https://$host/spaceman"
+          base="https://$host/zendows"
           for _ in 1 2 3 4 5 6; do
             status=$(curl --silent --max-time 20 --output /dev/null --write-out '%{http_code}' "$base/")
             [ "$status" = 200 ] && break
@@ -166,14 +159,14 @@ jobs:
           location=$(printf '%s\n' "$headers" | awk 'tolower($1) == "location:" { sub(/\r$/, "", $2); print $2; exit }')
           echo "download/macos-arm64 -> $dl_status $location"
           [ "$dl_status" = 302 ] || { echo "::error::Expected 302 from $base/download/macos-arm64, got $dl_status"; exit 1; }
-          [[ "$location" =~ ^https://anoma\.ly/release/spaceman/desktop/(stable|dev)/macos-arm64$ ]] || {
+          [[ "$location" =~ ^https://anoma\.ly/release/zendows/desktop/(stable|dev)/macos-arm64$ ]] || {
             echo "::error::Unexpected redirect target: $location"
             exit 1
           }
 
           sha_body=$(curl --fail --silent --show-error --max-time 20 "$base/download/macos-arm64.sha256")
           echo "download/macos-arm64.sha256 -> $sha_body"
-          [[ "$sha_body" =~ ^[0-9a-f]{64}[[:space:]]+Spaceman\.zip$ ]] || {
+          [[ "$sha_body" =~ ^[0-9a-f]{64}[[:space:]]+Zendows\.zip$ ]] || {
             echo "::error::Unexpected sha256 response: $sha_body"
             exit 1
           }

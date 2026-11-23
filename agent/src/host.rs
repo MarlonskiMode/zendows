@@ -13,7 +13,7 @@ use objc2::{
 };
 use objc2_app_kit::NSApplication;
 use objc2_foundation::{NSRunLoop, NSRunLoopCommonModes, NSTimer};
-use spaceman::app::{HostCallbacks, MainThreadAgent, PreparedAgent, TICK_INTERVAL, TickOutcome};
+use zendows::app::{HostCallbacks, MainThreadAgent, PreparedAgent, TICK_INTERVAL, TickOutcome};
 
 use crate::Ui;
 
@@ -44,8 +44,8 @@ pub fn bring_window_forward(window: &rune::AppHandle<Ui>) {
 }
 
 pub fn run() -> Result<(), String> {
-    let (prepared, bridge) = spaceman::app::prepare()?;
-    let accessibility = spaceman::macos::accessibility_trusted();
+    let (prepared, bridge) = zendows::app::prepare()?;
+    let accessibility = zendows::macos::accessibility_trusted();
     let initial_tour = crate::onboarding::launch_step(accessibility);
     let open_at_launch = initial_tour.is_some() || !accessibility;
     let mut app = crate::live_app(bridge, initial_tour, accessibility)
@@ -115,7 +115,7 @@ fn start_main_thread() {
         Ok(agent) => agent,
         Err(error) => {
             STARTUP_ERROR.with(|slot| *slot.borrow_mut() = Some(error));
-            spaceman::app::allow_immediate_termination();
+            zendows::app::allow_immediate_termination();
             window.quit();
             return;
         }
@@ -160,7 +160,7 @@ fn tick_pump() {
                 state.timer.invalidate();
                 drop(state);
             }
-            spaceman::app::finish_appkit_termination();
+            zendows::app::finish_appkit_termination();
         }
     }
 }

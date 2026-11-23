@@ -1,4 +1,4 @@
-use spaceman::{
+use zendows::{
     Rect, WorkspaceId,
     app::{UiHudDisplay, UiHudTile, UiHudWorkspace},
 };

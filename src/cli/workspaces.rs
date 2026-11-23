@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use serde::Serialize;
-use spaceman::WorkspaceId;
+use zendows::WorkspaceId;
 
 use super::{
     Outcome,
@@ -134,7 +134,7 @@ fn run_assign(args: &[&str], path_override: Option<&Path>) -> Result<String, Str
     let (json, positional) = split_json_flag(args)?;
     let [raw_workspace, raw_monitor] = positional.as_slice() else {
         return Err(
-            "usage: spaceman workspaces assign <ws> <main|secondary|display-name-or-uuid> [--json]"
+            "usage: zendows workspaces assign <ws> <main|secondary|display-name-or-uuid> [--json]"
                 .into(),
         );
     };
@@ -174,7 +174,7 @@ fn run_assign(args: &[&str], path_override: Option<&Path>) -> Result<String, Str
 fn run_clear(args: &[&str], path_override: Option<&Path>) -> Result<String, String> {
     let (json, positional) = split_json_flag(args)?;
     let [raw_workspace] = positional.as_slice() else {
-        return Err("usage: spaceman workspaces clear <ws> [--json]".into());
+        return Err("usage: zendows workspaces clear <ws> [--json]".into());
     };
     let workspace = WorkspaceId::parse(raw_workspace)?;
     let default_monitor = default_monitor_for(workspace);

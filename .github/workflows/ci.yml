@@ -42,7 +42,7 @@ jobs:
       - name: Audit dependencies
         run: cargo audit
       - name: No compromised eMudhra CA roots
-        run: cargo build --locked && scripts/check-ca-roots.sh target/debug/spaceman
+        run: cargo build --locked && scripts/check-ca-roots.sh target/debug/zendows
       - name: Replay fixture
         run: cargo run --locked -- replay fixtures/ghostty-tab-replacement.json
       - name: Check example configuration

@@ -14,7 +14,7 @@ use crate::journal::PlacementSource;
 /// snapshot must not retire a slot.
 pub(super) const OMISSION_SETTLE: Duration = Duration::from_secs(2);
 /// Consecutive bounced or rejected applications for the same target frame
-/// before Spaceman stops retrying that target (even when rejected frames vary
+/// before Zendows stops retrying that target (even when rejected frames vary
 /// each cycle), preventing infinite resize-fight flicker loops.
 pub(super) const APPLY_ATTEMPT_LIMIT: u8 = 3;
 

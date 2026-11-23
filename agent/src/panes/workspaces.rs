@@ -8,7 +8,7 @@ pub(crate) use displays::{
 
 use rune::{El, Tx, col};
 use rune_kit::SegmentedControl;
-use spaceman::WorkspaceId;
+use zendows::WorkspaceId;
 
 use crate::{
     Pane, Ui,
@@ -65,7 +65,7 @@ pub(crate) fn poll_displays(ui: &mut Ui, clock: f64) -> bool {
 
 #[cfg(target_os = "macos")]
 fn read_displays() -> Option<Vec<displays::ConnectedDisplay>> {
-    spaceman::macos::outputs()
+    zendows::macos::outputs()
         .ok()
         .map(|outputs| displays::connected(&outputs))
 }

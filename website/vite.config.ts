@@ -7,11 +7,11 @@ import { DOWNLOAD_URL, RELEASE_VERSION, SITE_URL } from "./src/release.ts";
 // The agent files that come from elsewhere: the JSON-LD, from the release the page offers, and
 // /skill.md, the repository's setup skill as it is.
 function forAgents(): Plugin {
-  const skill = () => readFileSync(new URL("../skills/spaceman-setup/SKILL.md", import.meta.url), "utf8");
+  const skill = () => readFileSync(new URL("../skills/zendows-setup/SKILL.md", import.meta.url), "utf8");
   const jsonLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Spaceman",
+    name: "Zendows",
     description: "A tiling window manager for macOS. Every window side by side, nothing on top of anything else.",
     url: SITE_URL,
     image: `${SITE_URL}og-image.png`,
@@ -40,9 +40,9 @@ function forAgents(): Plugin {
   };
 }
 
-// Production lives at https://anoma.ly/spaceman/ (worker.ts). The gallery and capture builds pass
+// Production lives at https://github.com/MarlonskiMode/zendows/ (worker.ts). The gallery and capture builds pass
 // --base ./ (show/tools/build-static.sh); every runtime asset URL is relative, so both work.
 export default defineConfig({
-  base: "/spaceman/",
+  base: "/zendows/",
   plugins: [react(), tailwindcss(), forAgents()],
 });

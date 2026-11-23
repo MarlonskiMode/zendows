@@ -3,7 +3,7 @@
 
 use rune::{El, Tx, col};
 use rune_kit::SegmentedControl;
-use spaceman::{app::UiLaunchAtLogin, config::HudStyle};
+use zendows::{app::UiLaunchAtLogin, config::HudStyle};
 
 use crate::{
     Ui,
@@ -33,7 +33,7 @@ pub fn pane(ui: &Ui, p: Paint) -> El {
             let access = controls::setting_row(
                 p,
                 "accessibility",
-                spaceman::permission_guide::list_name(),
+                zendows::permission_guide::list_name(),
                 Some(("Required to move and resize windows.".into(), c.warning.fg)),
                 controls::button(
                     p,
@@ -111,7 +111,7 @@ pub fn pane(ui: &Ui, p: Paint) -> El {
             "Show in Finder",
             ButtonKind::Secondary,
             |_: &mut Ui, _: &mut Tx| {
-                if let Some(path) = spaceman::config::config_path() {
+                if let Some(path) = zendows::config::config_path() {
                     controls::reveal_in_finder(&path);
                 }
             },

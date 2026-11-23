@@ -10,7 +10,7 @@ fn temp_dir(name: &str) -> std::path::PathBuf {
     static NEXT: AtomicUsize = AtomicUsize::new(0);
     let id = NEXT.fetch_add(1, Ordering::Relaxed);
     let dir = std::env::temp_dir().join(format!(
-        "spaceman-onboarding-test-{name}-{}-{id}",
+        "zendows-onboarding-test-{name}-{}-{id}",
         std::process::id()
     ));
     std::fs::create_dir_all(&dir).unwrap();

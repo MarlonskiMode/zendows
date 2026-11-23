@@ -1,6 +1,6 @@
 {
-  "name": "Spaceman",
-  "short_name": "Spaceman",
+  "name": "Zendows",
+  "short_name": "Zendows",
   "description": "A tiling window manager for macOS. Every window side by side, nothing on top of anything else.",
   "start_url": "./",
   "display": "browser",

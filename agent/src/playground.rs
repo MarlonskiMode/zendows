@@ -4,7 +4,7 @@
 use std::sync::OnceLock;
 
 use rune::{App, Playground};
-use spaceman::{
+use zendows::{
     WorkspaceId,
     app::{UiAgentSnapshot, UiLaunchAtLogin, UiUpdateStatus},
 };
@@ -26,7 +26,7 @@ pub fn attach(app: App<Ui>) -> App<Ui> {
         .enabled(true)
         .bar(false)
         .scenes(|name| name.contains('/'))
-        .sizes(&[("Spaceman window", WINDOW_SIZE)]);
+        .sizes(&[("Zendows window", WINDOW_SIZE)]);
     app.playground(hud::triggers(playground))
 }
 

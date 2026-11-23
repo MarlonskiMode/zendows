@@ -7,7 +7,7 @@ use std::{
 use crate::{config::Config, login_item};
 
 /// How long a Launch at Login reading stays fresh. Each reading is an XPC round
-/// trip to `smd`; Spaceman's own toggle reports its result directly, so the
+/// trip to `smd`; Zendows's own toggle reports its result directly, so the
 /// probe only has to notice changes made in System Settings.
 const LOGIN_STATUS_TTL: Duration = Duration::from_secs(30);
 
@@ -89,7 +89,7 @@ pub(super) fn spawn(interval: Duration) -> Prober {
     let (sender, results) = mpsc::channel();
     let (refresh, refresh_requests) = mpsc::channel();
     let spawned = thread::Builder::new()
-        .name("spaceman-probe".into())
+        .name("zendows-probe".into())
         .spawn(move || {
             let mut state = ProbeState::default();
             let mut forced = false;

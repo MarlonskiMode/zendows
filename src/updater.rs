@@ -1,27 +1,16 @@
-//! Spaceman's in-app updater, a client of Anomaly's release service
-//! (`https://anoma.ly/release/spaceman/desktop/<channel>.json`). A worker thread
-//! checks the channel 10 seconds after launch, then hourly (every 15 minutes on
-//! the dev channel) or on "Check for Updates". When the channel's current
-//! release isn't the running build it downloads the zip from the release
-//! service's own `files/`, checks its size and SHA-256 against the manifest,
-//! unpacks it beside the installed bundle and checks its code signature
-//! (`bundle`). The update then waits for Install & Restart, which restores every
-//! parked window first (`ExitIntent::Update`) and only then swaps the bundles.
-//! Quitting with an update ready installs it the same way, after the restore,
-//! for the next launch. Manifest polls revalidate with `If-None-Match`, and an
-//! interrupted download resumes (`transport`).
+//! Zendows's in-app updater.
 //!
-//! Versions are display text and never compared: a build installed by this
-//! updater is known by its target's SHA-256 (`installed.json`, tied to the
-//! running executable's hash), any other by its exact version. Each build
-//! knows the channel and version it was published as (`stamp`); a channel
-//! setting other than the build's own offers a switch the user confirms.
-//! A copy Spaceman can't replace (a read-only or translocated location) still
-//! checks, and offers the release's download instead of installing it.
-//! Manifests are not signed: HTTPS, the manifest's SHA-256 and the Developer ID
-//! signature are the integrity checks. Builds from source (no
-//! `SPACEMAN_RELEASE_BUILD` stamp, which only the Release workflow's build sets)
-//! never check.
+//! **Fork policy:** this tree is a rename fork of Spaceman (Anomaly). It must
+//! not contact Anomaly's release service (`anoma.ly/release/...`) under the new
+//! brand. `Updater::start` keeps the worker disabled until a maintainer sets a
+//! private release host, Developer ID, and notarization. The protocol/transport
+//! code remains for that future wiring; `ORIGIN` / `FILES` point at
+//! `example.invalid` placeholders so a mistaken enable cannot hit Anomaly.
+//!
+//! Upstream Spaceman release builds stamped `ZENDOWS_RELEASE_BUILD` (formerly
+//! `SPACEMAN_RELEASE_BUILD`) and polled a channel JSON, verified SHA-256 +
+//! Developer ID, then staged `Zendows.app`. That path stays compiled but is
+//! unreachable from `start` in this fork.
 
 #[allow(unsafe_code)]
 mod bundle;
@@ -40,12 +29,13 @@ use crate::app::UiUpdateStatus;
 use crate::config::{Config, UpdateChannel};
 use protocol::{Decision, Install, Reason, Target};
 
-const APP: &str = "spaceman";
+const APP: &str = "zendows";
 const ARTIFACT: &str = "desktop";
 const TARGET: &str = "macos-arm64";
-const ORIGIN: &str = "https://anoma.ly/release";
+/// Placeholder only — not a live host. Replace before re-enabling updates.
+const ORIGIN: &str = "https://example.invalid/zendows-updates";
 /// Every download must come from the release service's own files.
-const FILES: &str = "https://anoma.ly/release/spaceman/files/";
+const FILES: &str = "https://example.invalid/zendows-updates/files/";
 const STARTUP_DELAY: Duration = Duration::from_secs(10);
 const CHECK_INTERVAL: Duration = Duration::from_secs(60 * 60);
 const DEV_CHECK_INTERVAL: Duration = Duration::from_secs(15 * 60);
@@ -56,7 +46,7 @@ const BUCKET: &str = "bucket";
 /// How this install takes updates.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Method {
-    /// A `Spaceman.app` this user can replace: updates stage and install.
+    /// A `Zendows.app` this user can replace: updates stage and install.
     Direct,
     /// A read-only or translocated copy: updates are offered as a download.
     DownloadOnly,
@@ -94,7 +84,7 @@ struct StagedUpdate {
     staged: bundle::Staged,
     sha256: String,
     version: String,
-    /// The SHA-256 of its `spaceman-agent`, which identifies it once it runs.
+    /// The SHA-256 of its `zendows-agent`, which identifies it once it runs.
     executable: String,
 }
 
@@ -186,33 +176,15 @@ impl Updater {
     /// Starts the worker, unless this build can't update at all. A copy it
     /// can't replace still checks, to offer the download.
     pub(crate) fn start() -> Self {
-        let installed = bundle::installed_bundle();
-        let disabled = if option_env!("SPACEMAN_RELEASE_BUILD") != Some("1") {
-            Some(UiUpdateStatus::SourceBuild)
-        } else if std::env::var_os("SPACEMAN_DISABLE_UPDATES").is_some_and(|value| value == "1")
-            || installed.is_none()
-        {
-            Some(UiUpdateStatus::Unavailable)
-        } else {
-            None
-        };
-        let updater = Self::with_phase(disabled.clone().map_or(Phase::Idle, Phase::Disabled));
-        if let (None, Some(installed)) = (disabled, installed) {
-            let method = if bundle::replaceable(&installed) {
-                Method::Direct
-            } else {
-                Method::DownloadOnly
-            };
-            let shared = Arc::clone(&updater.shared);
-            if let Err(error) = std::thread::Builder::new()
-                .name("updater".into())
-                .spawn(move || run(&shared, &installed, method))
-            {
-                log(&format!("couldn't start: {error}"));
-                updater.shared.set_phase(Phase::Failed);
-            }
-        }
-        updater
+        // Zendows fork: never phone Anomaly's release service. Source builds and
+        // any accidental RELEASE_BUILD stamp stay offline until a private origin
+        // and signing identity are configured (see README / docs/releasing.md).
+        let _ = (
+            bundle::installed_bundle(),
+            option_env!("ZENDOWS_RELEASE_BUILD"),
+            std::env::var_os("ZENDOWS_DISABLE_UPDATES"),
+        );
+        Self::with_phase(Phase::Disabled(UiUpdateStatus::Unavailable))
     }
 
     fn with_phase(phase: Phase) -> Self {
@@ -279,7 +251,7 @@ impl Updater {
         self.shared.signal.notify_all();
     }
 
-    /// Opens the release's zip, for a copy Spaceman can't replace itself.
+    /// Opens the release's zip, for a copy Zendows can't replace itself.
     pub(crate) fn open_download(&self) -> Result<(), String> {
         let Phase::Available(Available::Download { url, .. }) = &self.shared.lock().phase else {
             return Err("no download is on offer".into());

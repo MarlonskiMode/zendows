@@ -1,4 +1,4 @@
-//! Spaceman's single-process macOS agent (`spaceman-agent`): runs the window
+//! Zendows's single-process macOS agent (`zendows-agent`): runs the window
 //! manager, native status bar item, updater, Settings window, and Rune
 //! Playground (`⇧⌘D` / `--playground`) on one AppKit + Rune event loop.
 
@@ -25,7 +25,7 @@ use std::sync::Arc;
 pub use panes::Pane;
 use rules::{Doc, Place};
 use rune::{AppSpec, KeyEvent, PointerPress, Tx, Waker};
-use spaceman::app::{UiAction, UiAgentSnapshot, UiBridge};
+use zendows::app::{UiAction, UiAgentSnapshot, UiBridge};
 
 /// One fixed size: tiling window managers float such a window, and every pane fits it.
 pub const WINDOW_SIZE: (f32, f32) = (860.0, 580.0);
@@ -170,7 +170,7 @@ impl Ui {
     }
 
     /// Saves the channel, then checks it at once.
-    pub fn set_update_channel(&mut self, channel: spaceman::config::UpdateChannel) {
+    pub fn set_update_channel(&mut self, channel: zendows::config::UpdateChannel) {
         self.edit(|doc| doc.set_update_channel(channel));
         if self.error.is_none() {
             self.check_for_updates();
@@ -178,7 +178,7 @@ impl Ui {
     }
 
     /// Sets the Workspace HUD off (`None`) or on with `style` (`Some(style)`).
-    pub fn set_hud(&mut self, mode: Option<spaceman::config::HudStyle>) {
+    pub fn set_hud(&mut self, mode: Option<zendows::config::HudStyle>) {
         let enabled = mode.is_some();
         self.edit(|doc| {
             doc.set_hud(enabled);
@@ -255,7 +255,7 @@ fn setup(ui: &mut Ui, waker: Waker) {
 
 fn poll(ui: &mut Ui, clock: f64, tx: &mut Tx) -> bool {
     if !ui.fixture && !ui.frame_remembered {
-        ui.frame_remembered = rune_mac::remember_frame("Spaceman");
+        ui.frame_remembered = rune_mac::remember_frame("Zendows");
     }
     let mut changed = onboarding::poll(ui, tx);
     changed |= panes::workspaces::poll_displays(ui, clock);
@@ -343,7 +343,7 @@ fn on_reopen(ui: &mut Ui, _has_visible_windows: bool, _tx: &mut Tx) -> bool {
 
 fn spec() -> AppSpec<Ui> {
     AppSpec {
-        title: "Spaceman",
+        title: "Zendows",
         size: WINDOW_SIZE,
         min_size: Some(WINDOW_SIZE),
         init: playground::blank_fixture,
@@ -388,7 +388,7 @@ fn base_app() -> rune::App<Ui> {
 
 #[cfg(target_os = "macos")]
 pub(crate) fn live_app(
-    bridge: spaceman::app::UiBridge,
+    bridge: zendows::app::UiBridge,
     initial_tour: Option<onboarding::Step>,
     accessibility: bool,
 ) -> rune::App<Ui> {
@@ -424,7 +424,7 @@ fn main() {
     if let Err(error) = host::run() {
         drop(std::io::Write::write_all(
             &mut std::io::stderr(),
-            format!("Spaceman failed: {error}\n").as_bytes(),
+            format!("Zendows failed: {error}\n").as_bytes(),
         ));
         std::process::exit(1);
     }

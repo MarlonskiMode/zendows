@@ -14,7 +14,7 @@ use std::{
 mod cli;
 
 use serde::{Deserialize, Serialize};
-use spaceman::{
+use zendows::{
     Engine, Model, NativeObservation, Reconciliation, ReconciliationEvidence, Settings, reconcile,
 };
 
@@ -30,7 +30,7 @@ struct Replay {
 
 #[derive(Serialize)]
 struct ReplayOutput {
-    steps: Vec<spaceman::Reconciliation>,
+    steps: Vec<zendows::Reconciliation>,
 }
 
 #[cfg(target_os = "macos")]
@@ -39,7 +39,7 @@ struct SnapshotOutput {
     observation: NativeObservation,
     reconciliation: Reconciliation,
     #[serde(skip_serializing_if = "Option::is_none")]
-    apply_results: Option<Vec<spaceman::macos::ApplyResult>>,
+    apply_results: Option<Vec<zendows::macos::ApplyResult>>,
 }
 
 #[cfg(target_os = "macos")]
@@ -50,7 +50,7 @@ struct WatchOutput {
 
 fn main() -> ExitCode {
     let mut args = env::args();
-    let executable = args.next().unwrap_or_else(|| "spaceman".into());
+    let executable = args.next().unwrap_or_else(|| "zendows".into());
     let Some(command) = args.next() else {
         print_usage(&executable);
         return ExitCode::from(2);
@@ -68,7 +68,7 @@ fn main() -> ExitCode {
         #[cfg(target_os = "macos")]
         ("snapshot", []) => run_retile(false).and_then(to_json),
         #[cfg(target_os = "macos")]
-        ("displays", []) => spaceman::macos::outputs()
+        ("displays", []) => zendows::macos::outputs()
             .map(|outputs| outputs.displays().to_vec())
             .map_err(|error| error.to_string())
             .and_then(to_json),
@@ -79,10 +79,10 @@ fn main() -> ExitCode {
             .filter(|hours| *hours > 0)
             .ok_or_else(|| format!("hours must be a positive integer, got {hours:?}"))
             .and_then(|hours| run_doctor(Some(hours))),
-        ("config-check", [path]) => spaceman::config::load_path(std::path::Path::new(path))
+        ("config-check", [path]) => zendows::config::load_path(std::path::Path::new(path))
             .map(|_| "configuration is valid".into()),
         #[cfg(target_os = "macos")]
-        ("ctl", _) => spaceman::control::send(&arguments),
+        ("ctl", _) => zendows::control::send(&arguments),
         #[cfg(target_os = "macos")]
         ("hud", []) => run_hud(),
         #[cfg(target_os = "macos")]
@@ -151,26 +151,26 @@ fn print_usage(executable: &str) {
 }
 
 fn run_doctor(hours: Option<u64>) -> Result<String, String> {
-    let (live, rotated) = spaceman::journal::default_paths().ok_or("HOME is unavailable")?;
-    let (lines, skipped) = spaceman::journal::read(&[&rotated, &live])?;
+    let (live, rotated) = zendows::journal::default_paths().ok_or("HOME is unavailable")?;
+    let (lines, skipped) = zendows::journal::read(&[&rotated, &live])?;
     if lines.is_empty() && skipped == 0 {
         return Ok(format!(
-            "No arrangement journal at {} yet. It is written by a running Spaceman agent.",
+            "No arrangement journal at {} yet. It is written by a running Zendows agent.",
             live.display()
         ));
     }
-    let now = spaceman::journal::unix_millis();
+    let now = zendows::journal::unix_millis();
     let since = hours.map_or(0, |hours| now.saturating_sub(hours * 3_600_000));
-    Ok(spaceman::journal::summarize(&lines, since, now, skipped))
+    Ok(zendows::journal::summarize(&lines, since, now, skipped))
 }
 
 #[cfg(target_os = "macos")]
 fn run_hud() -> Result<String, String> {
     loop {
-        let source = spaceman::control::send(&["debug".into()])?;
+        let source = zendows::control::send(&["debug".into()])?;
         let debug: serde_json::Value =
             serde_json::from_str(&source).map_err(|error| error.to_string())?;
-        print!("\x1b[2J\x1b[HSpaceman HUD  (Ctrl-C to close)\n\n");
+        print!("\x1b[2J\x1b[HZendows HUD  (Ctrl-C to close)\n\n");
         for display in debug["displays"].as_array().into_iter().flatten() {
             let frame = &display["frame"];
             let layout = if display["fullscreen_layout"].as_bool() == Some(true) {
@@ -261,12 +261,12 @@ fn to_json(value: impl Serialize) -> Result<String, String> {
 #[cfg(target_os = "macos")]
 fn run_retile(should_apply: bool) -> Result<SnapshotOutput, String> {
     let (observation, settings) =
-        spaceman::macos::snapshot(1).map_err(|error| error.to_string())?;
+        zendows::macos::snapshot(1).map_err(|error| error.to_string())?;
     if should_apply
         && observation
             .applications
             .iter()
-            .any(|app| matches!(app, spaceman::AppObservation::Unavailable { .. }))
+            .any(|app| matches!(app, zendows::AppObservation::Unavailable { .. }))
     {
         return Err("refusing to apply an incomplete window observation".into());
     }
@@ -277,7 +277,7 @@ fn run_retile(should_apply: bool) -> Result<SnapshotOutput, String> {
         &settings,
     );
     let apply_results =
-        should_apply.then(|| spaceman::macos::apply(&reconciliation.placements, &settings));
+        should_apply.then(|| zendows::macos::apply(&reconciliation.placements, &settings));
     Ok(SnapshotOutput {
         observation,
         reconciliation,
@@ -301,12 +301,12 @@ fn run_watch(
         let ticket = engine.begin_cycle();
         let (mut observation, mut settings) = match (initial_window_id, scope.as_ref()) {
             (Some(window_id), None) => {
-                spaceman::macos::snapshot_for_window(ticket.cycle, window_id)
+                zendows::macos::snapshot_for_window(ticket.cycle, window_id)
             }
             (Some(_), Some(scope)) => {
-                spaceman::macos::snapshot_in_output(ticket.cycle, scope.output)
+                zendows::macos::snapshot_in_output(ticket.cycle, scope.output)
             }
-            (None, _) => spaceman::macos::snapshot(ticket.cycle),
+            (None, _) => zendows::macos::snapshot(ticket.cycle),
         }
         .map_err(|error| error.to_string())?;
         if let Some(initial_window_id) = initial_window_id {
@@ -321,14 +321,14 @@ fn run_watch(
             active_scope.filter(&mut observation);
             settings.output = active_scope.frame;
         } else {
-            spaceman::live::add_absent_applications(&mut observation, &mut known_apps);
+            zendows::live::add_absent_applications(&mut observation, &mut known_apps);
         }
         let reconciliation = engine
             .accept(ticket, &observation, &settings)
             .map_err(|error| format!("stale synchronous cycle: {error:?}"))?;
         let placements =
-            spaceman::live::applicable_placements(&observation, &reconciliation, &settings);
-        let apply_results = should_apply.then(|| spaceman::macos::apply(&placements, &settings));
+            zendows::live::applicable_placements(&observation, &reconciliation, &settings);
+        let apply_results = should_apply.then(|| zendows::macos::apply(&placements, &settings));
 
         steps.push(SnapshotOutput {
             observation,
@@ -358,9 +358,9 @@ fn run_persistent(should_apply: bool) -> Result<String, String> {
     while running.load(Ordering::Acquire) {
         engine.invalidate();
         let ticket = engine.begin_cycle();
-        let (mut observation, settings) = match spaceman::macos::snapshot(ticket.cycle) {
+        let (mut observation, settings) = match zendows::macos::snapshot(ticket.cycle) {
             Ok(snapshot) => snapshot,
-            Err(spaceman::macos::SnapshotError::AccessibilityPermissionRequired) => {
+            Err(zendows::macos::SnapshotError::AccessibilityPermissionRequired) => {
                 return Err(
                     "Accessibility permission is required for the persistent runtime".into(),
                 );
@@ -382,14 +382,14 @@ fn run_persistent(should_apply: bool) -> Result<String, String> {
             engine.invalidate();
             break;
         }
-        spaceman::live::add_absent_applications(&mut observation, &mut known_apps);
+        zendows::live::add_absent_applications(&mut observation, &mut known_apps);
         let reconciliation = engine
             .accept(ticket, &observation, &settings)
             .map_err(|error| format!("stale synchronous cycle: {error:?}"))?;
         let placements =
-            spaceman::live::applicable_placements(&observation, &reconciliation, &settings);
+            zendows::live::applicable_placements(&observation, &reconciliation, &settings);
         let apply_results = (should_apply && running.load(Ordering::Acquire)).then(|| {
-            spaceman::macos::apply_while(&placements, &settings, || running.load(Ordering::Acquire))
+            zendows::macos::apply_while(&placements, &settings, || running.load(Ordering::Acquire))
         });
         let step = SnapshotOutput {
             observation,
@@ -425,10 +425,10 @@ fn run_persistent(should_apply: bool) -> Result<String, String> {
 
 #[cfg(target_os = "macos")]
 struct WindowScope {
-    app: spaceman::AppInstanceId,
+    app: zendows::AppInstanceId,
     bundle_id: String,
-    frame: spaceman::Rect,
-    output: spaceman::Rect,
+    frame: zendows::Rect,
+    output: zendows::Rect,
     excluded_window_ids: HashSet<u32>,
     authorized_window_ids: HashSet<u32>,
     missing_cycles: u8,
@@ -439,13 +439,13 @@ impl WindowScope {
     fn discover(
         observation: &NativeObservation,
         window_id: u32,
-        output: spaceman::Rect,
+        output: zendows::Rect,
     ) -> Result<Self, String> {
         observation
             .applications
             .iter()
             .find_map(|app| match app {
-                spaceman::AppObservation::Complete { app, windows, .. } => windows
+                zendows::AppObservation::Complete { app, windows, .. } => windows
                     .iter()
                     .find(|window| window.id.window_id == window_id)
                     .map(|window| Self {
@@ -471,7 +471,7 @@ impl WindowScope {
             .applications
             .drain(..)
             .find(|app| app.app_id() == &self.app);
-        if let Some(spaceman::AppObservation::Complete {
+        if let Some(zendows::AppObservation::Complete {
             focused, windows, ..
         }) = &mut scoped
         {
@@ -502,13 +502,13 @@ impl WindowScope {
         }
         self.missing_cycles = self.missing_cycles.saturating_add(1);
         observation.applications = vec![if self.missing_cycles <= 8 {
-            spaceman::AppObservation::Unavailable {
+            zendows::AppObservation::Unavailable {
                 app: self.app.clone(),
                 error: "scoped window is settling or absent".into(),
             }
         } else {
-            spaceman::AppObservation::Complete {
-                app: spaceman::ObservedApplication {
+            zendows::AppObservation::Complete {
+                app: zendows::ObservedApplication {
                     id: self.app.clone(),
                     bundle_id: self.bundle_id.clone(),
                 },

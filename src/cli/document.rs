@@ -5,7 +5,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use spaceman::{
+use zendows::{
     DisplaySelector, WorkspaceId, Workspaces,
     config::{Config, HudStyle, UpdateChannel, config_path},
     state_file::write_atomic,

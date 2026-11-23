@@ -5,7 +5,7 @@ use std::{
 };
 
 use serde_json::Value;
-use spaceman::{
+use zendows::{
     AppInstanceId, ObservedWindow, PhysicalWindowId, Rect, WorkspaceId,
     config::{Config, HudStyle, WindowDisposition},
 };
@@ -22,7 +22,7 @@ impl TempConfig {
         static NEXT: AtomicU64 = AtomicU64::new(0);
         let id = NEXT.fetch_add(1, Ordering::Relaxed);
         let dir = std::env::temp_dir().join(format!(
-            "spaceman-cli-test-{label}-{}-{id}",
+            "zendows-cli-test-{label}-{}-{id}",
             std::process::id()
         ));
         let path = dir.join("config.toml");
@@ -51,7 +51,7 @@ impl Drop for TempConfig {
 
 fn run_cli(args: &[&str], config_path: Option<&Path>) -> Outcome {
     let (&command, rest) = args.split_first().expect("args must be non-empty");
-    try_run_with_config_path("spaceman", command, rest, config_path)
+    try_run_with_config_path("zendows", command, rest, config_path)
         .expect("command should be handled by cli module")
 }
 
@@ -109,7 +109,7 @@ fn help_and_version_exit_zero_on_stdout() {
         assert!(outcome.stderr.is_none());
     }
 
-    let expected_version = format!("spaceman {}", env!("CARGO_PKG_VERSION"));
+    let expected_version = format!("zendows {}", env!("CARGO_PKG_VERSION"));
     for flag in ["--version", "-V"] {
         let outcome = run_cli(&[flag], None);
         assert_eq!(outcome.exit_code, 0);
@@ -498,11 +498,11 @@ fn workspaces_list_assign_and_clear_round_trip() {
     assert_eq!(update_9.exit_code, 0);
 
     let parsed = Config::parse(&temp.read()).unwrap();
-    let mut workspaces = spaceman::Workspaces::default();
+    let mut workspaces = zendows::Workspaces::default();
     parsed.configure_workspaces(&mut workspaces);
     assert_eq!(
         workspaces.assignment(WorkspaceId::named('D').unwrap()),
-        &spaceman::DisplaySelector::Preferred("Studio Display".into())
+        &zendows::DisplaySelector::Preferred("Studio Display".into())
     );
 
     // List now includes workspace D

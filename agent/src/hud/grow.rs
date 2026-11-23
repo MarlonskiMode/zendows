@@ -2,7 +2,7 @@
 //! on larger than the rest.
 
 use rune::{Cursor, El, Spring, Tx, el, row};
-use spaceman::{
+use zendows::{
     Rect, WorkspaceId,
     app::{HUD_PREVIEW_RECT, UiHudWorkspace},
 };

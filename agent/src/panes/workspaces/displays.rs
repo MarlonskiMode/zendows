@@ -1,15 +1,15 @@
 //! The displays Settings › Workspaces offers: every connected screen, its friendly label, and
 //! the exact `config.toml` selector the engine resolves (the same one Option+Shift+Tab writes).
 
-use spaceman::Rect;
-use spaceman::macos::DisplayOutputs;
+use zendows::Rect;
+use zendows::macos::DisplayOutputs;
 
 /// The built-in selector for the display macOS marks as main.
 pub(crate) const MAIN: &str = "main";
 /// The built-in selector for the first non-main display.
 pub(crate) const SECONDARY: &str = "secondary";
 
-/// One connected display, read from `spaceman::macos::outputs`.
+/// One connected display, read from `zendows::macos::outputs`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ConnectedDisplay {
     /// `main`, `secondary`, or the display's UUID.

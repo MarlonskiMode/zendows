@@ -1,7 +1,7 @@
 //! Frame-by-frame checks of the HUD's motion: the overlay's own view and flow, stepped at
 //! 120 Hz on a virtual clock and read back as presented rects, opacity and scale.
 //!
-//! `cargo test -p spaceman-agent hud::motion_tests::trace -- --ignored --nocapture` prints the
+//! `cargo test -p zendows-agent hud::motion_tests::trace -- --ignored --nocapture` prints the
 //! capsule's pose and the marker's edges for every frame of a show, a burst and a hide.
 
 use std::sync::{
@@ -13,7 +13,7 @@ use rune::{
     Env, Runtime,
     motion_gate::{Run, Snap},
 };
-use spaceman::{
+use zendows::{
     Rect, WorkspaceId,
     app::{UiHudDisplay, UiHudTile, UiHudWorkspace},
     config::HudStyle,

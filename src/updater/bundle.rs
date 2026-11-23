@@ -1,12 +1,15 @@
 //! Installing an update on macOS. The verified zip unpacks beside the installed
-//! `Spaceman.app` (same volume) into `.Spaceman-update-<version>`; the bundle in
-//! it must be `anomaly.spaceman`, satisfy Anomaly's notarized Developer ID
-//! requirement (`app/update-requirement.txt`) and carry team `5NZ4Q7NXJ4`.
-//! After Spaceman has restored every parked window, the two bundles swap in one
-//! step (`renamex_np` with `RENAME_SWAP`) and the new one opens once this process
-//! exits (or, at a quit, at the next launch). The old bundle waits in the
-//! staging folder until the next launch removes it. A read-only or translocated
-//! location never stages an update; it is offered as a download instead.
+//! `Zendows.app` (same volume) into `.Zendows-update-<version>`; the bundle in
+//! it must be `com.marlonskimode.zendows` and satisfy the Developer ID
+//! requirement in `app/update-requirement.txt` (placeholder `YOURTEAMID` until
+//! the fork maintainer configures signing). After Zendows has restored every
+//! parked window, the two bundles swap in one step (`renamex_np` with
+//! `RENAME_SWAP`) and the new one opens once this process exits (or, at a quit,
+//! at the next launch). The old bundle waits in the staging folder until the
+//! next launch removes it. A read-only or translocated location never stages an
+//! update; it is offered as a download instead.
+//!
+//! Runtime updates are disabled in this fork (`updater::Updater::start`).
 
 use std::ffi::CString;
 use std::fs;
@@ -15,14 +18,15 @@ use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-const BUNDLE_ID: &str = "anomaly.spaceman";
-const TEAM_ID: &str = "5NZ4Q7NXJ4";
+const BUNDLE_ID: &str = "com.marlonskimode.zendows";
+/// Placeholder until the fork maintainer sets a Developer ID team.
+const TEAM_ID: &str = "YOURTEAMID";
 const REQUIREMENT: &str = include_str!("../../app/update-requirement.txt");
 /// Only folders with this exact prefix beside the bundle are ever removed.
-const PREFIX: &str = ".Spaceman-update-";
-const APP: &str = "Spaceman.app";
+const PREFIX: &str = ".Zendows-update-";
+const APP: &str = "Zendows.app";
 /// The executable whose hash identifies an installed build (`super::receipt`).
-pub(super) const EXECUTABLE: &str = "Contents/MacOS/spaceman-agent";
+pub(super) const EXECUTABLE: &str = "Contents/MacOS/zendows-agent";
 
 /// An unpacked, verified bundle and the installed bundle it replaces.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -31,7 +35,7 @@ pub(super) struct Staged {
     pub(super) installed: PathBuf,
 }
 
-/// The running `Spaceman.app`, when this executable is inside one.
+/// The running `Zendows.app`, when this executable is inside one.
 pub(super) fn installed_bundle() -> Option<PathBuf> {
     let executable = std::env::current_exe().ok()?.canonicalize().ok()?;
     let bundle = executable.parent()?.parent()?.parent()?;
@@ -62,7 +66,7 @@ pub(super) fn replaceable(bundle: &Path) -> bool {
 pub(super) fn stage(archive: &Path, installed: &Path, version: &str) -> Result<Staged, String> {
     let parent = installed
         .parent()
-        .ok_or("Spaceman.app has no parent folder")?;
+        .ok_or("Zendows.app has no parent folder")?;
     let staging = parent.join(format!("{PREFIX}{version}"));
     let result = unpack(archive, &staging).and_then(|update| {
         verify_bundle(&update, REQUIREMENT, Some(TEAM_ID))?;
@@ -80,7 +84,7 @@ pub(super) fn stage(archive: &Path, installed: &Path, version: &str) -> Result<S
     }
 }
 
-/// Unpacks a zip that must hold exactly `Spaceman.app`, as the release builds it.
+/// Unpacks a zip that must hold exactly `Zendows.app`, as the release builds it.
 fn unpack(archive: &Path, staging: &Path) -> Result<PathBuf, String> {
     if staging.exists() {
         fs::remove_dir_all(staging).map_err(|error| error.to_string())?;
@@ -102,7 +106,7 @@ fn unpack(archive: &Path, staging: &Path) -> Result<PathBuf, String> {
         .map(|entry| entry.file_name())
         .collect::<Vec<_>>();
     if entries.len() != 1 || entries[0] != APP {
-        return Err("the update must hold exactly Spaceman.app".into());
+        return Err("the update must hold exactly Zendows.app".into());
     }
     Ok(staging.join(APP))
 }
@@ -128,7 +132,7 @@ fn verify_bundle(bundle: &Path, requirement: &str, team: Option<&str>) -> Result
         .map_err(|error| format!("couldn't run codesign: {error}"))?;
     if !output.status.success() {
         return Err(format!(
-            "the update's code signature is not Anomaly's notarized Developer ID: {}",
+            "the update's code signature is not the required notarized Developer ID: {}",
             String::from_utf8_lossy(&output.stderr).trim()
         ));
     }
@@ -162,14 +166,14 @@ pub(super) fn install(staged: &Staged, relaunch: bool) -> Result<(), String> {
     Command::new("/bin/sh")
         .args([
             "-c",
-            "while kill -0 \"$SPACEMAN_PID\" 2>/dev/null; do sleep 0.2; done; exec /usr/bin/open \"$SPACEMAN_BUNDLE\"",
+            "while kill -0 \"$ZENDOWS_PID\" 2>/dev/null; do sleep 0.2; done; exec /usr/bin/open \"$ZENDOWS_BUNDLE\"",
         ])
-        .env("SPACEMAN_PID", std::process::id().to_string())
-        .env("SPACEMAN_BUNDLE", &staged.installed)
+        .env("ZENDOWS_PID", std::process::id().to_string())
+        .env("ZENDOWS_BUNDLE", &staged.installed)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        // Its own process group, so nothing that ends Spaceman's group ends it.
+        // Its own process group, so nothing that ends Zendows's group ends it.
         .process_group(0)
         .spawn()
         .map_err(|error| format!("couldn't schedule the relaunch: {error}"))?;
@@ -186,14 +190,14 @@ fn swap(staged: &Staged) -> Result<(), String> {
     // SAFETY: Both paths are NUL-terminated and outlive the call.
     if unsafe { libc::renamex_np(from.as_ptr(), to.as_ptr(), libc::RENAME_SWAP) } != 0 {
         return Err(format!(
-            "couldn't swap in the updated Spaceman.app: {}",
+            "couldn't swap in the updated Zendows.app: {}",
             std::io::Error::last_os_error()
         ));
     }
     Ok(())
 }
 
-/// Removes a staged update Spaceman won't install.
+/// Removes a staged update Zendows won't install.
 pub(super) fn discard(staged: &Staged) {
     if let Some(folder) = staged.update.parent() {
         drop(fs::remove_dir_all(folder));
@@ -237,13 +241,13 @@ mod tests {
 
     fn temporary(name: &str) -> PathBuf {
         let path =
-            std::env::temp_dir().join(format!("spaceman-bundle-{name}-{}", std::process::id()));
+            std::env::temp_dir().join(format!("zendows-bundle-{name}-{}", std::process::id()));
         drop(fs::remove_dir_all(&path));
         fs::create_dir_all(&path).unwrap();
         path.canonicalize().unwrap()
     }
 
-    /// A minimal ad-hoc signed `Spaceman.app` with `identifier`.
+    /// A minimal ad-hoc signed `Zendows.app` with `identifier`.
     fn bundle(root: &Path, identifier: &str) -> PathBuf {
         let bundle = root.join(APP);
         fs::create_dir_all(bundle.join("Contents/MacOS")).unwrap();
@@ -253,7 +257,7 @@ mod tests {
             format!(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<plist version=\"1.0\"><dict>\
                  <key>CFBundleIdentifier</key><string>{identifier}</string>\
-                 <key>CFBundleExecutable</key><string>spaceman-agent</string>\
+                 <key>CFBundleExecutable</key><string>zendows-agent</string>\
                  </dict></plist>"
             ),
         )
@@ -286,7 +290,7 @@ mod tests {
     fn only_anomalys_signature_team_and_identity_pass() {
         let root = temporary("verify");
         let app = bundle(&root, BUNDLE_ID);
-        let identifier = "identifier \"anomaly.spaceman\"";
+        let identifier = "identifier \"com.marlonskimode.zendows\"";
         // An ad-hoc signature satisfies a plain identifier requirement…
         verify_bundle(&app, identifier, None).unwrap();
         // …but has no team, and never satisfies Anomaly's Developer ID requirement.
@@ -296,7 +300,7 @@ mod tests {
         let other = bundle(&root.join("other"), "com.kitlangton.spaceman");
         let error =
             verify_bundle(&other, "identifier \"com.kitlangton.spaceman\"", None).unwrap_err();
-        assert!(error.contains("not anomaly.spaceman"), "{error}");
+        assert!(error.contains("not com.marlonskimode.zendows"), "{error}");
         // A modified bundle no longer satisfies its signature.
         fs::write(app.join(EXECUTABLE), b"tampered").unwrap();
         assert!(verify_bundle(&app, identifier, None).is_err());
@@ -304,7 +308,7 @@ mod tests {
     }
 
     #[test]
-    fn a_zip_must_hold_exactly_spaceman_app() {
+    fn a_zip_must_hold_exactly_zendows_app() {
         let root = temporary("unpack");
         let app = bundle(&root.join("source"), BUNDLE_ID);
         let zip = |name: &str, extra: bool| {
@@ -325,7 +329,7 @@ mod tests {
         let unpacked = unpack(&zip("good.zip", false), &staging).unwrap();
         assert_eq!(unpacked, staging.join(APP));
         assert!(!staging.join("stale").exists());
-        verify_bundle(&unpacked, "identifier \"anomaly.spaceman\"", None).unwrap();
+        verify_bundle(&unpacked, "identifier \"com.marlonskimode.zendows\"", None).unwrap();
         assert!(unpack(&zip("extra.zip", true), &staging).is_err());
         drop(fs::remove_dir_all(root));
     }
@@ -389,8 +393,8 @@ mod tests {
         let app = root.join(APP);
         fs::create_dir_all(&app).unwrap();
         assert!(replaceable(&app));
-        assert!(!replaceable(&root.join("AppTranslocation/x/Spaceman.app")));
-        assert!(!replaceable(Path::new("/System/Applications/Spaceman.app")));
+        assert!(!replaceable(&root.join("AppTranslocation/x/Zendows.app")));
+        assert!(!replaceable(Path::new("/System/Applications/Zendows.app")));
         drop(fs::remove_dir_all(root));
     }
 }

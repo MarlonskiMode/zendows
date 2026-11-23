@@ -4,13 +4,13 @@
 
 use std::path::PathBuf;
 
-use spaceman::{
+use zendows::{
     WorkspaceId,
     config::{HudStyle, UpdateChannel},
 };
 use toml_edit::{ArrayOfTables, DocumentMut, Item, Table, value};
 
-const EMPTY: &str = "# Spaceman configuration.\nversion = 1\n";
+const EMPTY: &str = "# Zendows configuration.\nversion = 1\n";
 
 /// Where a rule sends an app's windows.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -40,7 +40,7 @@ pub struct Doc {
 
 impl Doc {
     pub fn load() -> Doc {
-        let path = spaceman::config::config_path();
+        let path = zendows::config::config_path();
         let source = match path.as_ref().map(std::fs::read_to_string) {
             Some(Ok(source)) => source,
             Some(Err(error)) if error.kind() == std::io::ErrorKind::NotFound => EMPTY.into(),
@@ -57,7 +57,7 @@ impl Doc {
             Ok(doc) => Doc {
                 path: None,
                 doc,
-                error: spaceman::config::Config::parse(source).err(),
+                error: zendows::config::Config::parse(source).err(),
             },
             Err(error) => Doc::broken(None, error.to_string()),
         }
@@ -306,9 +306,9 @@ impl Doc {
     pub fn display_path(&self) -> String {
         self.path
             .clone()
-            .or_else(spaceman::config::config_path)
+            .or_else(zendows::config::config_path)
             .map_or_else(
-                || "~/Library/Application Support/Spaceman/config.toml".into(),
+                || "~/Library/Application Support/Zendows/config.toml".into(),
                 |path| crate::controls::home_relative(&path),
             )
     }
@@ -317,17 +317,17 @@ impl Doc {
         self.doc.to_string()
     }
 
-    /// Writes the file once Spaceman's own parser accepts it; the agent picks it up from there.
+    /// Writes the file once Zendows's own parser accepts it; the agent picks it up from there.
     pub fn save(&mut self) -> Result<(), String> {
         if let Some(error) = &self.error {
             return Err(format!("config.toml has an error to fix first: {error}"));
         }
         let source = self.source();
-        spaceman::config::Config::parse(&source)?;
+        zendows::config::Config::parse(&source)?;
         let Some(path) = &self.path else {
             return Ok(());
         };
-        spaceman::state_file::write_atomic(path, source.as_bytes())
+        zendows::state_file::write_atomic(path, source.as_bytes())
             .map_err(|error| error.to_string())
     }
 }

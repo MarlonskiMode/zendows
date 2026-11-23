@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Keeps /Applications/Spaceman.app on the tip of dev. Every 30 s it checks origin/dev with
+# Keeps /Applications/Zendows.app on the tip of dev. Every 30 s it checks origin/dev with
 # `git ls-remote`; once dev has moved and then stayed put for QUIET seconds (pushes come in
 # bursts, so one build covers them all, and a busy stretch builds anyway after MAXWAIT), it builds
 # a signed bundle in its own worktree and installs it with `install-app.sh --wait-idle`, so the
 # restart, which restores and re-tiles every window, waits until the keyboard and mouse are idle.
 # Run it from a LaunchAgent; scripts/install-updater sets that up.
 set -uo pipefail
-WT=${SPACEMAN_UPDATER_WT:-$(cd "$(dirname "$0")/.." && pwd)}
-STATE=$HOME/.local/share/spaceman
+WT=${ZENDOWS_UPDATER_WT:-$(cd "$(dirname "$0")/.." && pwd)}
+STATE=$HOME/.local/share/zendows
 STAMP=$STATE/installed-rev
 export PATH="$HOME/.cargo/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-QUIET=${SPACEMAN_UPDATER_QUIET:-180}
-MAXWAIT=${SPACEMAN_UPDATER_MAXWAIT:-600}
-IDLE=${SPACEMAN_UPDATER_IDLE:-120}
+QUIET=${ZENDOWS_UPDATER_QUIET:-180}
+MAXWAIT=${ZENDOWS_UPDATER_MAXWAIT:-600}
+IDLE=${ZENDOWS_UPDATER_IDLE:-120}
 mkdir -p "$STATE"
 cd "$WT" || exit 1
 remote_head() { git ls-remote origin refs/heads/dev 2>/dev/null | cut -f1; }

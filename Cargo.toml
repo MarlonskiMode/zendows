@@ -1,13 +1,13 @@
 [package]
-name = "spaceman"
+name = "zendows"
 version = "0.3.3"
 edition = "2024"
 rust-version = "1.100"
 license = "MIT"
 description = "A macOS tiling window manager with stable logical windows"
-repository = "https://github.com/anomalyco/spaceman"
+repository = "https://github.com/MarlonskiMode/zendows"
 publish = false
-default-run = "spaceman"
+default-run = "zendows"
 
 [build-dependencies]
 cc = "1"

@@ -11,7 +11,7 @@ pub use flow::{Effect, Flow, Input, SetupState, Step, launch_step};
 pub use view::overlay;
 
 use rune::Tx;
-use spaceman::app::UiLaunchAtLogin;
+use zendows::app::UiLaunchAtLogin;
 
 use crate::{
     Pane, Ui, apps,

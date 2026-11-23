@@ -20,12 +20,12 @@ Choose which window shows                              // fullscreen.focus
 ├── Option+` / ctl focus next -> next tile in stable order, wraps (raises it)
 ├── Option+H/K -> previous tile, Option+L/J -> next tile, no wrap
 │   └── Past either end -> adjacent display, as in split layouts
-├── Command+`       -> macOS same-app cycle; Spaceman remembers the result
+├── Command+`       -> macOS same-app cycle; Zendows remembers the result
 └── Click / Dock / app switch -> whatever macOS focuses is shown and remembered
 
 Mode persistence                                        // fullscreen.persist
 ├── Switch away and back -> still fullscreen, same window on top
-├── Spaceman restart     -> mode and remembered top window restored
+├── Zendows restart     -> mode and remembered top window restored
 ├── Ghostty native-tab replacement -> keeps mode and slot
 ├── Floating / dialog window opens -> floats above without exiting Fullscreen Layout
 ├── New tiled window opens or moves in -> automatically exits Fullscreen Layout and splits side by side
@@ -51,13 +51,13 @@ Unit (FakeBackend), `src/app/tests/layout.rs`:
 `opening_a_new_tiled_window_exits_fullscreen_layout_and_splits_side_by_side`,
 `opening_a_floating_window_preserves_fullscreen_layout`, and
 `ghostty_native_tab_replacement_preserves_workspace_and_fullscreen_layout`. They prove frames,
-persisted mode, and which window Spaceman asks to focus or raise; none observes real z-order.
+persisted mode, and which window Zendows asks to focus or raise; none observes real z-order.
 
 ## How To Get To It (User POV)
 
 ```ts
 Focus a window on the target workspace
-├── Option+Shift+F / spaceman ctl fullscreen -> toggle
+├── Option+Shift+F / zendows ctl fullscreen -> toggle
 └── Option+/                          -> exits (and flips the axis); there is no "exit only" key besides Option+Shift+F
 ```
 
@@ -82,7 +82,7 @@ independently.
   same frame, so spatial navigation found no target; the stack now uses tile order instead.
 - **Nothing shows how many windows are stacked or which is next.** Hidden windows are full-size
   underneath rather than hidden, so closing the top window reveals whatever macOS raises next, not
-  necessarily the next tile in Spaceman's order. No test covers that close path.
+  necessarily the next tile in Zendows's order. No test covers that close path.
 - **New tiled windows** on the workspace automatically exit Fullscreen Layout and split side by side,
   while floating/dialog windows open above without exiting Fullscreen Layout.
 - Native macOS fullscreen is a different thing: such windows are not managed at all. **Known

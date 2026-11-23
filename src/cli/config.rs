@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
-use spaceman::config::{HudStyle, UpdateChannel, load_path};
+use zendows::config::{HudStyle, UpdateChannel, load_path};
 
 use super::{
     Outcome,
@@ -160,7 +160,7 @@ fn run_show(args: &[&str], path_override: Option<&Path>) -> Result<String, Strin
 fn run_get(args: &[&str], path_override: Option<&Path>) -> Result<String, String> {
     let (json, positional) = split_json_flag(args)?;
     let [raw_key] = positional.as_slice() else {
-        return Err("usage: spaceman config get <key> [--json]".into());
+        return Err("usage: zendows config get <key> [--json]".into());
     };
     let key = SettingKey::parse(raw_key)?;
     let path = resolve_config_path(path_override)?;
@@ -199,7 +199,7 @@ fn run_get(args: &[&str], path_override: Option<&Path>) -> Result<String, String
 fn run_set(args: &[&str], path_override: Option<&Path>) -> Result<String, String> {
     let (json, positional) = split_json_flag(args)?;
     let [raw_key, raw_value] = positional.as_slice() else {
-        return Err("usage: spaceman config set <key> <value> [--json]".into());
+        return Err("usage: zendows config set <key> <value> [--json]".into());
     };
     let key = SettingKey::parse(raw_key)?;
     let path = resolve_config_path(path_override)?;
@@ -265,7 +265,7 @@ fn run_check(args: &[&str], path_override: Option<&Path>) -> Result<String, Stri
     let (path, explicit): (PathBuf, bool) = match positional.as_slice() {
         [] => (resolve_config_path(path_override)?, false),
         [target] => (PathBuf::from(target), true),
-        _ => return Err("usage: spaceman config check [path] [--json]".into()),
+        _ => return Err("usage: zendows config check [path] [--json]".into()),
     };
 
     let exists = if explicit {

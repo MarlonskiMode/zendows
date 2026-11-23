@@ -5,11 +5,11 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleDisplayName</key>
-    <string>Spaceman</string>
+    <string>Zendows</string>
     <key>CFBundleExecutable</key>
-    <string>spaceman-agent</string>
+    <string>zendows-agent</string>
     <key>CFBundleIdentifier</key>
-    <string>anomaly.spaceman</string>
+    <string>com.marlonskimode.zendows</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleIconName</key>
@@ -17,7 +17,7 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Spaceman</string>
+    <string>Zendows</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -29,20 +29,6 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSAccessibilityUsageDescription</key>
-    <string>Spaceman uses Accessibility access to observe and tile application windows.</string>
-    <key>SUEnableAutomaticChecks</key>
-    <true/>
-    <key>SUAutomaticallyUpdate</key>
-    <false/>
-    <key>SUAllowsAutomaticUpdates</key>
-    <false/>
-    <key>SUFeedURL</key>
-    <string>https://pub-6f85d683ffe0419cad0a71508904053a.r2.dev/appcast.xml</string>
-    <key>SUPublicEDKey</key>
-    <string>mIek27lttJe8cIBqVZFhh6reRKjpTx1h9ZY9OKWPtuM=</string>
-    <key>SURequireSignedFeed</key>
-    <true/>
-    <key>SUVerifyUpdateBeforeExtraction</key>
-    <true/>
+    <string>Zendows uses Accessibility access to observe and tile application windows.</string>
 </dict>
 </plist>

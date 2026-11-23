@@ -149,7 +149,7 @@ impl ManagementScope {
             "secondary" => Ok(Self::Secondary),
             "both" => Ok(Self::Both),
             _ => Err(format!(
-                "SPACEMAN_MANAGED_DISPLAY must be main, secondary, or both; got {value:?}"
+                "ZENDOWS_MANAGED_DISPLAY must be main, secondary, or both; got {value:?}"
             )),
         }
     }
@@ -245,7 +245,7 @@ enum WorkerCommand {
 }
 
 /// Worker commands slower than this are logged; long Accessibility stalls
-/// otherwise look like Spaceman silently doing nothing.
+/// otherwise look like Zendows silently doing nothing.
 const SLOW_WORKER_COMMAND: Duration = Duration::from_secs(2);
 
 impl WorkerCommand {
@@ -402,9 +402,9 @@ impl PreparedAgent {
             ));
         }
         if let Err(error) = status_item::install(self.actions_sender.clone()) {
-            log_event!("failed to install Spaceman status item: {error}");
+            log_event!("failed to install Zendows status item: {error}");
             termination::allow_next();
-            return Err(format!("failed to install Spaceman status item: {error}"));
+            return Err(format!("failed to install Zendows status item: {error}"));
         }
         status_item::set_hud(self.hud);
         let launch_status = login_item::status();

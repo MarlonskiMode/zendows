@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use serde::Serialize;
-use spaceman::WorkspaceId;
+use zendows::WorkspaceId;
 
 use super::{
     Outcome,
@@ -343,7 +343,7 @@ fn parse_remove_args(args: &[&str]) -> Result<(RemoveTarget, bool), String> {
             }
         }
         (None, _) => Err(
-            "usage: spaceman rules remove (<index-or-bundle-id> | --app <bundle-id>) [--json]"
+            "usage: zendows rules remove (<index-or-bundle-id> | --app <bundle-id>) [--json]"
                 .into(),
         ),
     }

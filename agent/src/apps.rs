@@ -61,7 +61,7 @@ pub fn running() -> Vec<Running> {
                     name: app.localizedName()?.to_string(),
                 })
             })
-            .filter(|app| app.bundle_id != "anomaly.spaceman")
+            .filter(|app| app.bundle_id != "com.marlonskimode.zendows")
             .collect();
         running.sort_by_key(|app| app.name.to_lowercase());
         running.dedup_by(|a, b| a.bundle_id == b.bundle_id);
@@ -103,7 +103,7 @@ pub fn window_manager_name(
     None
 }
 
-/// Other macOS window managers currently running alongside Spaceman.
+/// Other macOS window managers currently running alongside Zendows.
 #[cfg(target_os = "macos")]
 pub fn conflicting_window_managers() -> Vec<String> {
     use objc2_app_kit::NSWorkspace;

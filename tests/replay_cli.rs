@@ -4,10 +4,10 @@ use serde_json::Value;
 
 #[test]
 fn replay_reports_a_slot_preserving_ghostty_replacement() {
-    let output = Command::new(env!("CARGO_BIN_EXE_spaceman"))
+    let output = Command::new(env!("CARGO_BIN_EXE_zendows"))
         .args(["replay", "fixtures/ghostty-tab-replacement.json"])
         .output()
-        .expect("spaceman should run");
+        .expect("zendows should run");
 
     assert!(
         output.status.success(),

@@ -1,6 +1,6 @@
 #!/bin/sh
-# Renders the Homebrew cask anomalyco/tap/spaceman (anomalyco/homebrew-tap,
-# Casks/spaceman.rb) from packaging/homebrew/spaceman.rb, without secrets. The
+# Renders the Homebrew cask MarlonskiMode/homebrew-tap/zendows (anomalyco/homebrew-tap,
+# Casks/zendows.rb) from packaging/homebrew/zendows.rb, without secrets. The
 # Release workflow's Homebrew job pushes it with
 # .github/release/push-homebrew.sh.
 #
@@ -21,10 +21,10 @@ case "${1:-}" in
     version=$2 url=$3 sha256=$4 out=$5
     printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-(beta|dev)\.[0-9]+)?$'
     printf '%s\n' "$sha256" | grep -Eq '^[0-9a-f]{64}$'
-    printf '%s\n' "$url" | grep -Eq '^https://anoma\.ly/release/spaceman/files/[0-9a-f]{64}/Spaceman\.zip$'
-    # The file is Spaceman.zip under its sha256, so the URL names no version.
+    printf '%s\n' "$url" | grep -Eq '^https://anoma\.ly/release/zendows/files/[0-9a-f]{64}/Zendows\.zip$'
+    # The file is Zendows.zip under its sha256, so the URL names no version.
     sed -e "s|@VERSION@|$version|" -e "s|@SHA256@|$sha256|" -e "s|@URL@|$url|" \
-      "$root/packaging/homebrew/spaceman.rb" > "$out"
+      "$root/packaging/homebrew/zendows.rb" > "$out"
     if grep -q '@[A-Z0-9_]*@' "$out"; then
       echo "The cask has an unfilled placeholder." >&2
       exit 1

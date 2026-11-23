@@ -17,10 +17,10 @@
 mode=$1
 case "$mode" in
   dev)
-    worker=spaceman-dev-site host=dev.anoma.ly
+    worker=zendows-dev-site host=dev.anoma.ly
     ;;
   production)
-    worker=spaceman-production-site host=anoma.ly
+    worker=zendows-production-site host=anoma.ly
     ;;
   *) die "Unknown site mode: $mode" ;;
 esac
@@ -66,8 +66,8 @@ jq -n \
       run_worker_first: true
     },
     routes: [
-      { pattern: "\($host)/spaceman", zone_name: $host },
-      { pattern: "\($host)/spaceman/*", zone_name: $host }
+      { pattern: "\($host)/zendows", zone_name: $host },
+      { pattern: "\($host)/zendows/*", zone_name: $host }
     ]
   }' > "$work/wrangler.jsonc"
 

@@ -3,7 +3,7 @@
 //! real workspace.
 
 use rune::{El, Play, Playground, col, el};
-use spaceman::{
+use zendows::{
     Rect, WorkspaceId,
     app::{UiHudDisplay, UiHudTile, UiHudWorkspace},
     config::HudStyle,

@@ -14,7 +14,7 @@ static NSUInteger guideReopens;
 static const NSUInteger guideReopenLimit = 2;
 static NSView *guideTile;
 
-/// The tile flies on its own from the click in Spaceman's window to its place
+/// The tile flies on its own from the click in Zendows's window to its place
 /// in the guide, so the eye can follow it to System Settings.
 static NSPanel *flightPanel;
 static CALayer *flightLayer;
@@ -33,7 +33,7 @@ static NSString *const settingsBundleID = @"com.apple.systempreferences";
 /// stand down.
 static NSUInteger settingsRequest;
 
-@interface SpacemanDragView : NSView <NSDraggingSource>
+@interface ZendowsDragView : NSView <NSDraggingSource>
 @property(nonatomic, strong) NSURL *bundleURL;
 @property(nonatomic, strong) NSImage *appIcon;
 @property(nonatomic, copy) NSString *appName;
@@ -41,12 +41,12 @@ static NSUInteger settingsRequest;
 @end
 
 /// The name System Settings lists the app under.
-static NSString *spacemanAppName(NSURL *bundleURL) {
+static NSString *zendowsAppName(NSURL *bundleURL) {
     NSString *name = [[NSFileManager defaultManager] displayNameAtPath:bundleURL.path];
     if ([name.pathExtension.lowercaseString isEqualToString:@"app"]) {
         name = name.stringByDeletingPathExtension;
     }
-    return name.length > 0 ? name : @"Spaceman";
+    return name.length > 0 ? name : @"Zendows";
 }
 
 /// macOS 27 renamed the Accessibility list to Device Control and Data Access.
@@ -64,21 +64,21 @@ static BOOL accessibilityProtected(void) {
 }
 
 /// The name of the Privacy & Security list Accessibility lives in.
-const char *spaceman_accessibility_list_name(void) {
+const char *zendows_accessibility_list_name(void) {
     if (accessibilityProtected()) {
         return "System & App Protection Override";
     }
     return accessibilityRenamed() ? "Device Control and Data Access" : "Accessibility";
 }
 
-/// Whether System Settings still accepts Spaceman's tile dragged into its list.
-bool spaceman_accessibility_drag_supported(void) {
+/// Whether System Settings still accepts Zendows's tile dragged into its list.
+bool zendows_accessibility_drag_supported(void) {
     return !accessibilityProtected();
 }
 
 /// Asks macOS to register this running binary in Accessibility and show its
 /// prompt when untrusted.
-bool spaceman_prompt_accessibility_trust(void) {
+bool zendows_prompt_accessibility_trust(void) {
     NSDictionary *options = @{(__bridge NSString *)kAXTrustedCheckOptionPrompt: @YES};
     return AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)options);
 }
@@ -110,7 +110,7 @@ static void drawTile(NSRect bounds, NSImage *icon, NSString *name, BOOL dark) {
     [name drawAtPoint:NSMakePoint(52, 14) withAttributes:attributes];
 }
 
-@implementation SpacemanDragView
+@implementation ZendowsDragView
 
 - (instancetype)initWithFrame:(NSRect)frame bundleURL:(NSURL *)bundleURL {
     self = [super initWithFrame:frame];
@@ -118,7 +118,7 @@ static void drawTile(NSRect bounds, NSImage *icon, NSString *name, BOOL dark) {
         _bundleURL = bundleURL;
         _appIcon = [[NSWorkspace sharedWorkspace] iconForFile:bundleURL.path];
         _appIcon.size = NSMakeSize(32, 32);
-        _appName = spacemanAppName(bundleURL);
+        _appName = zendowsAppName(bundleURL);
     }
     return self;
 }
@@ -231,8 +231,8 @@ static BOOL settingsHasWindow(void) {
 
 /// Bit 0: System Settings has an on-screen window.
 /// Bit 1: System Settings is the frontmost application.
-/// Bit 2: Spaceman is the active application.
-int spaceman_permission_settings_state(void) {
+/// Bit 2: Zendows is the active application.
+int zendows_permission_settings_state(void) {
     NSCAssert(NSThread.isMainThread, @"settings state must run on the main thread");
     BOOL open = settingsHasWindow();
     BOOL frontmost = settingsFrontmost();
@@ -275,7 +275,7 @@ static void openSettingsPaneMayQuit(NSURL *url, BOOL mayQuit) {
     BOOL cold = running.count == 0;
     NSUInteger request = ++settingsRequest;
     // A Settings window left on another Space would pull the whole screen
-    // there, away from Spaceman. Quit it so it opens fresh on this Space.
+    // there, away from Zendows. Quit it so it opens fresh on this Space.
     if (mayQuit && !cold && !settingsHasWindow() && settingsWindowExists()) {
         NSRunningApplication *settings = running.firstObject;
         [settings terminate];
@@ -364,13 +364,13 @@ static void closeGuide(void) {
 
 /// Whether the Accessibility guide is open, in front or waiting behind another
 /// app for System Settings to come back.
-bool spaceman_accessibility_guide_active(void) {
+bool zendows_accessibility_guide_active(void) {
     NSCAssert(NSThread.isMainThread, @"permission guide must run on the main thread");
     return guidePanel != nil;
 }
 
 /// Dismisses the Accessibility guide and cancels any pending cold-launch retry.
-void spaceman_close_accessibility_guide(void) {
+void zendows_close_accessibility_guide(void) {
     NSCAssert(NSThread.isMainThread, @"permission guide must run on the main thread");
     closeGuide();
 }
@@ -435,8 +435,8 @@ static void stepFlight(void) {
     }
 }
 
-/// Whether the click that asked for the guide was inside one of Spaceman's windows.
-static BOOL clickInSpacemanWindow(NSPoint point) {
+/// Whether the click that asked for the guide was inside one of Zendows's windows.
+static BOOL clickInZendowsWindow(NSPoint point) {
     for (NSWindow *window in NSApp.windows) {
         if (window.visible && window != guidePanel && window != flightPanel &&
             NSPointInRect(point, window.frame)) {
@@ -446,14 +446,14 @@ static BOOL clickInSpacemanWindow(NSPoint point) {
     return NO;
 }
 
-/// Lifts a copy of the tile out of Spaceman's window at `origin`.
+/// Lifts a copy of the tile out of Zendows's window at `origin`.
 static void beginFlight(NSPoint origin, NSURL *bundleURL, NSSize tileSize) {
     flightOrigin = origin;
     flightShownAt = CACurrentMediaTime();
     flightStartedAt = 0;
     NSImage *icon = [[NSWorkspace sharedWorkspace] iconForFile:bundleURL.path];
     icon.size = NSMakeSize(32, 32);
-    NSString *name = spacemanAppName(bundleURL);
+    NSString *name = zendowsAppName(bundleURL);
     BOOL dark = isDark(NSApp.effectiveAppearance);
     NSImage *image = [NSImage imageWithSize:tileSize
                                     flipped:NO
@@ -582,21 +582,21 @@ static void updateGuidePosition(void) {
     [guidePanel orderFrontRegardless];
 }
 
-void spaceman_show_accessibility_guide(void) {
+void zendows_show_accessibility_guide(void) {
     NSCAssert(NSThread.isMainThread, @"permission guide must run on the main thread");
     NSPoint click = NSEvent.mouseLocation;
     // macOS 27.3 rejects dragged tiles, so it gets a bar with click instructions
     // instead of the drag tile and its flight. macOS 27.0 through 27.2 keeps the
     // drag guide and its old list name.
     BOOL renamed = accessibilityProtected();
-    BOOL fly = !renamed && clickInSpacemanWindow(click) &&
+    BOOL fly = !renamed && clickInZendowsWindow(click) &&
                !NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion;
     closeGuide();
     guideReopens = 0;
 
     NSURL *bundleURL = NSBundle.mainBundle.bundleURL.standardizedURL;
-    NSString *listName = [NSString stringWithUTF8String:spaceman_accessibility_list_name()];
-    NSString *appName = spacemanAppName(bundleURL);
+    NSString *listName = [NSString stringWithUTF8String:zendows_accessibility_list_name()];
+    NSString *appName = zendowsAppName(bundleURL);
     NSURL *settingsURL = [NSURL URLWithString:
         @"x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility"];
     openSettingsPane(settingsURL);
@@ -656,7 +656,7 @@ void spaceman_show_accessibility_guide(void) {
     [content addSubview:instruction];
 
     if (!renamed) {
-        SpacemanDragView *dragView = [[SpacemanDragView alloc]
+        ZendowsDragView *dragView = [[ZendowsDragView alloc]
             initWithFrame:NSMakeRect(18, 17, panelSize.width - 36, 44)
                  bundleURL:bundleURL];
         [content addSubview:dragView];

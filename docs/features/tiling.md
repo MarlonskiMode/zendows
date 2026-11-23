@@ -43,7 +43,7 @@ Axis                                                    // tile.axis
 ```ts
 Keyboard: Option+H/J/K/L, Option+Shift+H/J/K/L, Option+`, Option+-, Option+=, Option+/
 Pointer:  drag a managed window (reorder/nest/move display), drag its edge (resize)
-CLI:      spaceman ctl focus | move-direction | resize | balance | layout | retile
+CLI:      zendows ctl focus | move-direction | resize | balance | layout | retile
 ```
 
 Input arriving while the worker is busy queues in order (up to 64); queued input is dropped on
@@ -80,16 +80,16 @@ pause, quit, or hotkey loss.
 
 ## Gotchas
 
-- Tests check requested frames; apps with minimum sizes may refuse them. Spaceman grows such a
+- Tests check requested frames; apps with minimum sizes may refuse them. Zendows grows such a
   window's tile to the size it kept, taking the space from its siblings in proportion to what each
   can spare, and logs a `minimum size:` line in `agent.log`. Minimums are learned per window, only
-  from refusals visible right after the write, and kept until the window closes or Spaceman
+  from refusals visible right after the write, and kept until the window closes or Zendows
   restarts. Apps that clamp
   later (Electron aspect ratios) are still recorded as constrained instead of fought every cycle.
-  If the requested split cannot fit, Spaceman tries grouping one adjacent pair of root children
+  If the requested split cannot fit, Zendows tries grouping one adjacent pair of root children
   on the other axis. It checks both width and height and keeps window order. Automatic fits
   are temporary; the requested layout returns when it fits again. If no pair solves the shortage,
-  windows may overlap. A sustained overlap involving a constrained tile appears in `spaceman doctor`
+  windows may overlap. A sustained overlap involving a constrained tile appears in `zendows doctor`
   as `constrained_overlap`.
 - Some apps (many SwiftUI apps) close a window by ordering it out; the window server keeps
   listing it. When a sibling stays visible and the app had one tile on this workspace, an empty

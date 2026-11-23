@@ -234,5 +234,5 @@ fn an_unmanaged_focused_window_is_rejected_clearly() {
         .err()
         .expect("an unmanaged window cannot be toggled");
 
-    assert_eq!(error, "Focused window is not managed by Spaceman");
+    assert_eq!(error, "Focused window is not managed by Zendows");
 }

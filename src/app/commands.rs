@@ -342,9 +342,9 @@ impl<B: WorkspaceBackend> WorkspaceRuntime<B> {
                 self.cycle(outputs.clone(), cancelled)?;
                 self.workspaces
                     .workspace_of(window)
-                    .ok_or("Focused window is not managed by Spaceman")?
+                    .ok_or("Focused window is not managed by Zendows")?
             }
-            None => return Err("Focused window is not managed by Spaceman".into()),
+            None => return Err("Focused window is not managed by Zendows".into()),
         };
         if !self.is_visible(workspace, outputs) {
             return Err("Focused window is not on an active workspace".into());
@@ -460,7 +460,7 @@ impl<B: WorkspaceBackend> WorkspaceRuntime<B> {
         let workspace = self
             .workspaces
             .workspace_of_any(&window)
-            .ok_or("Focused window is not managed by Spaceman")?;
+            .ok_or("Focused window is not managed by Zendows")?;
         if !self.is_visible(workspace, &outputs) {
             return Err("Focused window is not on an active workspace".into());
         }

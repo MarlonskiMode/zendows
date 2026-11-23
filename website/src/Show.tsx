@@ -369,7 +369,7 @@ export function Show({ header, hero }: { header: React.ReactNode; hero: (start: 
     <section
       ref={section}
       data-phase={phase}
-      aria-label="Spaceman"
+      aria-label="Zendows"
       className="relative h-[100svh] min-h-[480px] w-full overflow-hidden bg-[#08080a] select-none"
     >
       {phase !== "ended" && <Still onStart={start} live={phase === "live"} />}
@@ -411,12 +411,12 @@ export function Show({ header, hero }: { header: React.ReactNode; hero: (start: 
           >
             <img src="icon-512.png" alt="" width={104} height={104} className="size-[clamp(80px,9vw,104px)] rounded-[23%] shadow-[0_0_0_1px_rgba(255,255,255,.06),0_18px_40px_-12px_rgba(0,0,0,.8)]" />
             <div className="flex flex-col items-center gap-1.5">
-              <p className="text-[clamp(30px,4vw,44px)] leading-none font-semibold tracking-[-0.02em] text-[#f5f5f7]">Spaceman</p>
+              <p className="text-[clamp(30px,4vw,44px)] leading-none font-semibold tracking-[-0.02em] text-[#f5f5f7]">Zendows</p>
               <p className="text-[clamp(16px,1.7vw,19px)] text-[#8e8e93]">For your windows.</p>
             </div>
             {exported ? (
               <p data-ui="url" className="rounded-full bg-white/[0.07] px-5 py-2.5 text-[clamp(17px,1.9vw,21px)] font-medium tracking-[-0.01em] text-[#f5f5f7] shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]">
-                anoma.ly/spaceman
+                github.com/MarlonskiMode/zendows
               </p>
             ) : (
               <>

@@ -15,7 +15,7 @@ export const APPS = {
   viewer: { name: "Photos", bg: ["#9fb4c8", "#7290ad"], icon: "photos" },
   vigil: { name: "Vigil", bg: ["#2f343b", "#15181c"] },
   call: { name: "FaceTime", bg: ["#5cc27a", "#36a058"], icon: "facetime" },
-  spaceman: { name: "Spaceman", bg: ["#2b2d33", "#17181c"], icon: "spaceman" },
+  zendows: { name: "Zendows", bg: ["#2b2d33", "#17181c"], icon: "zendows" },
   settings: { name: "System Settings", bg: ["#9a9aa0", "#6e6e74"], icon: "settings" },
   stickies: { name: "Stickies", bg: ["#f6e08a", "#e9c94f"], icon: "stickies" },
   plans: { name: "Plans", bg: ["#6f8db0", "#4c6a8e"] },
@@ -153,7 +153,7 @@ function glyph(ctx, app, s) {
       ctx.lineTo(s * 0.62, s * 0.54)
       ctx.fill()
       break
-    case "spaceman":
+    case "zendows":
       ctx.fillStyle = "rgba(255,255,255,.85)"
       roundRect(ctx, s * 0.24, s * 0.26, s * 0.25, s * 0.48, s * 0.04)
       ctx.fill()

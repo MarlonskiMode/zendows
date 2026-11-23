@@ -555,7 +555,7 @@ impl<B: WorkspaceBackend> WorkspaceRuntime<B> {
             self.cycle(outputs.clone(), cancelled)?;
             self.workspaces
                 .workspace_of_any(&window)
-                .ok_or("Window is not managed by Spaceman")?
+                .ok_or("Window is not managed by Zendows")?
         };
         if source == target {
             return Ok(self.status(0, &outputs));

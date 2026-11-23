@@ -3,10 +3,9 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 plist="$root/app/Info.plist"
-expected_bundle_id=anomaly.spaceman
-expected_executables="spaceman spaceman-agent"
-expected_feed_url=https://pub-6f85d683ffe0419cad0a71508904053a.r2.dev/appcast.xml
-expected_sparkle_key=mIek27lttJe8cIBqVZFhh6reRKjpTx1h9ZY9OKWPtuM=
+expected_bundle_id=com.marlonskimode.zendows
+expected_executables="zendows zendows-agent"
+# Sparkle feed keys were removed in the Zendows fork; do not reintroduce Anomaly's appcast.
 
 fail() {
   echo "release validation failed: $*" >&2
@@ -27,25 +26,22 @@ plist_build=$(plist_value CFBundleVersion "$plist")
 bundle_id=$(plist_value CFBundleIdentifier "$plist")
 bundle_executable=$(plist_value CFBundleExecutable "$plist")
 deployment_target=$(plist_value LSMinimumSystemVersion "$plist")
-feed_url=$(plist_value SUFeedURL "$plist")
-sparkle_key=$(plist_value SUPublicEDKey "$plist")
-signed_feed=$(plist_value SURequireSignedFeed "$plist")
 
 [ -n "$cargo_version" ] || fail "Cargo package version is missing"
 [ "$cargo_version" = "$plist_version" ] || \
   fail "Cargo version $cargo_version does not match Info.plist version $plist_version"
 [ "$bundle_id" = "$expected_bundle_id" ] || \
   fail "unexpected bundle identifier $bundle_id (expected $expected_bundle_id)"
-[ "$bundle_executable" = spaceman-agent ] || \
+[ "$bundle_executable" = zendows-agent ] || \
   fail "source Info.plist has an unexpected main executable"
 case "$plist_build" in
   ''|*[!0-9]*) fail "CFBundleVersion must be a positive integer" ;;
   0) fail "CFBundleVersion must be greater than zero" ;;
 esac
 [ -n "$deployment_target" ] || fail "Info.plist does not declare LSMinimumSystemVersion"
-[ "$feed_url" = "$expected_feed_url" ] || fail "Info.plist has an unexpected Sparkle feed"
-[ "$sparkle_key" = "$expected_sparkle_key" ] || fail "Info.plist has an unexpected Sparkle public key"
-[ "$signed_feed" = true ] || fail "Info.plist does not require signed Sparkle feeds"
+if /usr/bin/plutil -extract SUFeedURL raw "$plist" >/dev/null 2>&1; then
+  fail "Info.plist must not declare SUFeedURL (Anomaly Sparkle channel stripped in this fork)"
+fi
 /usr/bin/plutil -lint "$plist" >/dev/null || fail "source Info.plist is invalid"
 
 if [ "${1:-}" = "--metadata-only" ]; then
@@ -56,16 +52,16 @@ fi
 
 [ "$#" -eq 2 ] || {
   echo "usage: $0 --metadata-only" >&2
-  echo "       $0 /path/to/Spaceman.app /path/to/Spaceman.zip" >&2
+  echo "       $0 /path/to/Zendows.app /path/to/Zendows.zip" >&2
   exit 2
 }
 
 bundle=$1
 archive=$2
-expected_arch=${SPACEMAN_RELEASE_ARCH:-$(uname -m)}
+expected_arch=${ZENDOWS_RELEASE_ARCH:-$(uname -m)}
 case "$expected_arch" in
   arm64|x86_64) ;;
-  *) fail "unsupported expected architecture '$expected_arch'; set SPACEMAN_RELEASE_ARCH to arm64 or x86_64" ;;
+  *) fail "unsupported expected architecture '$expected_arch'; set ZENDOWS_RELEASE_ARCH to arm64 or x86_64" ;;
 esac
 
 [ -d "$bundle" ] || fail "app bundle not found: $bundle"
@@ -119,16 +115,16 @@ actual_contents=$(mktemp)
 extracted=$(mktemp -d)
 trap 'rm -f "$actual_contents"; rm -rf "$extracted"' EXIT HUP INT TERM
 /usr/bin/unzip -Z1 "$archive" >"$actual_contents"
-if grep -Ev '^Spaceman\.app(/|$)' "$actual_contents" >/dev/null; then
-  fail "ZIP contains files outside Spaceman.app"
+if grep -Ev '^Zendows\.app(/|$)' "$actual_contents" >/dev/null; then
+  fail "ZIP contains files outside Zendows.app"
 fi
 for required in \
-  Spaceman.app/Contents/Info.plist \
-  Spaceman.app/Contents/MacOS/spaceman \
-  Spaceman.app/Contents/MacOS/spaceman-agent \
-  Spaceman.app/Contents/Resources/AppIcon.icns \
-  Spaceman.app/Contents/Resources/Assets.car \
-  Spaceman.app/Contents/_CodeSignature/CodeResources
+  Zendows.app/Contents/Info.plist \
+  Zendows.app/Contents/MacOS/zendows \
+  Zendows.app/Contents/MacOS/zendows-agent \
+  Zendows.app/Contents/Resources/AppIcon.icns \
+  Zendows.app/Contents/Resources/Assets.car \
+  Zendows.app/Contents/_CodeSignature/CodeResources
 do
   grep -Fxq "$required" "$actual_contents" || fail "ZIP is missing $required"
 done
@@ -136,18 +132,18 @@ done
 for relative_path in \
   Contents/CodeResources \
   Contents/Info.plist \
-  Contents/MacOS/spaceman \
-  Contents/MacOS/spaceman-agent \
+  Contents/MacOS/zendows \
+  Contents/MacOS/zendows-agent \
   Contents/Resources/AppIcon.icns \
   Contents/Resources/Assets.car \
   Contents/_CodeSignature/CodeResources
 do
-  /usr/bin/cmp "$bundle/$relative_path" "$extracted/Spaceman.app/$relative_path" || \
+  /usr/bin/cmp "$bundle/$relative_path" "$extracted/Zendows.app/$relative_path" || \
     fail "packed $relative_path differs from the validated bundle"
 done
-/usr/bin/codesign --verify --deep --strict --verbose=2 "$extracted/Spaceman.app" || \
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$extracted/Zendows.app" || \
   fail "packed bundle signature verification failed"
-xcrun stapler validate "$extracted/Spaceman.app" || \
+xcrun stapler validate "$extracted/Zendows.app" || \
   fail "packed bundle has no valid stapled notarization ticket"
 
 printf 'Release valid: version %s, macOS %s, %s, Developer ID signed, notarized, and Gatekeeper accepted\n' \

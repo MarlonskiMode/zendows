@@ -1,6 +1,6 @@
 # Feature Map
 
-What a Spaceman user can do, how they reach it, and what currently proves it works. Behavior is
+What a Zendows user can do, how they reach it, and what currently proves it works. Behavior is
 described from the user's point of view; [Controls](../controls.md) and
 [Configuration](../configuration.md) remain the reference for exact keys and schema.
 
@@ -17,12 +17,12 @@ docs/features/
 
 Baseline: `dev` at 0.3.2 (`93897a4`). Everything below except named workspaces and
 secondary-display workspaces ships in the notarized preview at
-<https://anoma.ly/spaceman/download/macos-arm64> and in source builds.
+<https://github.com/MarlonskiMode/zendows/download/macos-arm64> and in source builds.
 
 | Surface | Status |
 | --- | --- |
 | Workspaces, tiling, Fullscreen Layout, parking/restoration | Preview artifact and source builds |
-| Parking exemption, remembered placements (`window-memory.json`), arrangement journal, `spaceman doctor` | Preview artifact and source builds |
+| Parking exemption, remembered placements (`window-memory.json`), arrangement journal, `zendows doctor` | Preview artifact and source builds |
 | Single-process Rune Settings (`Activity`), three-step setup tour, non-activating Workspace HUD (`[settings] hud`) | Preview artifact and source builds |
 | Named workspaces A-Z | Opt-in: enabled by a `route` rule or `[[workspaces]]` entry |
 | Secondary-display workspaces 6-10 | Require a second display; with one display they fall back to `main` |
@@ -30,13 +30,13 @@ secondary-display workspaces ships in the notarized preview at
 
 ## Common Prerequisites
 
-- macOS with Accessibility permission granted to `Spaceman.app`. Without it, or without global
-  hotkey registration, Spaceman starts paused and only restores parked windows.
+- macOS with Accessibility permission granted to `Zendows.app`. Without it, or without global
+  hotkey registration, Zendows starts paused and only restores parked windows.
 - No other window manager running (AeroSpace, yabai, Amethyst): two managers fight over frames.
 - Only standard, movable, on-screen, non-native-fullscreen `AXWindow`s are managed. Panels,
-  dialogs, and other subroles are invisible to Spaceman and stay global (see
+  dialogs, and other subroles are invisible to Zendows and stay global (see
   [Compatibility](../compatibility.md)).
-- CLI paths assume `~/.local/bin/spaceman` is on `PATH`; layout-changing `ctl` commands require
+- CLI paths assume `~/.local/bin/zendows` is on `PATH`; layout-changing `ctl` commands require
   automatic tiling to be enabled.
 
 ## Evidence Conventions
@@ -50,7 +50,7 @@ Each feature file labels evidence as one of:
   hotkeys against disposable Ghostty windows. They require AeroSpace enabled initially and two
   displays.
 - **Observed**: behavior seen in `agent.log` or `journal.jsonl` on the maintainer's machine, with the
-  date. A log line proves what Spaceman requested, not what the user saw.
+  date. A log line proves what Zendows requested, not what the user saw.
 - **User report**: what the user saw, unverified by tooling.
 
 Absence of a check is a **gap**, not a defect; a defect is a reproduced or reported wrong outcome.

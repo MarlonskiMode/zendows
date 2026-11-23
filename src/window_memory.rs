@@ -9,7 +9,7 @@
 //!
 //! Normally only a relaunch (an update or restart) recalls these placements;
 //! an app the user opens mid-session opens where they are. Once the user moves one of an
-//! app's windows back by hand right after Spaceman opened it on the active
+//! app's windows back by hand right after Zendows opened it on the active
 //! workspace, that app is marked returning and every new instance of it
 //! recalls its placements, however long it was closed.
 //!

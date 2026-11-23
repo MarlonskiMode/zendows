@@ -1,8 +1,8 @@
-//! Pure state machine and owner-only persistence for Spaceman's 3-step setup tour.
+//! Pure state machine and owner-only persistence for Zendows's 3-step setup tour.
 
 use std::{fs, path::Path};
 
-use spaceman::state_file::write_atomic_owner_only;
+use zendows::state_file::write_atomic_owner_only;
 
 use crate::controls::PermissionControl;
 
@@ -187,13 +187,13 @@ impl Flow {
 }
 
 pub fn launch_step(accessibility_trusted: bool) -> Option<Step> {
-    let support = spaceman::config::application_support_path("onboarding-complete")?;
+    let support = zendows::config::application_support_path("onboarding-complete")?;
     let directory = support.parent()?;
     launch_step_at(directory, accessibility_trusted)
 }
 
 pub fn record_step(step: Step) {
-    if let Some(path) = spaceman::config::application_support_path("onboarding-step")
+    if let Some(path) = zendows::config::application_support_path("onboarding-step")
         && let Some(directory) = path.parent()
     {
         drop(record_step_at(directory, step));
@@ -201,7 +201,7 @@ pub fn record_step(step: Step) {
 }
 
 pub fn record_completion() {
-    if let Some(path) = spaceman::config::application_support_path("onboarding-complete")
+    if let Some(path) = zendows::config::application_support_path("onboarding-complete")
         && let Some(directory) = path.parent()
     {
         drop(record_completion_at(directory));
@@ -210,7 +210,7 @@ pub fn record_completion() {
 
 /// Decides whether a launch opens into the setup tour, and at which step.
 /// Existing trusted installs with no in-progress tour record completion silently
-/// so unattended `spaceman-updater` restarts stay windowless.
+/// so unattended `zendows-updater` restarts stay windowless.
 pub(crate) fn launch_step_at(directory: &Path, accessibility_trusted: bool) -> Option<Step> {
     if completion_recorded_at(directory) {
         return None;

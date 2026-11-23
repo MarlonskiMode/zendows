@@ -511,7 +511,7 @@ mod tests {
             channel: None,
         };
         for (app, artifact, reason) in [
-            ("spaceman", "desktop", "wrong_app"),
+            ("zendows", "desktop", "wrong_app"),
             ("example", "cli", "wrong_artifact"),
         ] {
             assert_eq!(
@@ -523,34 +523,34 @@ mod tests {
 
     #[test]
     fn target_urls_resolve_against_the_manifest() {
-        let manifest = "https://anoma.ly/release/spaceman/desktop/stable.json";
+        let manifest = "https://example.invalid/zendows-updates/desktop/stable.json";
         assert_eq!(
-            resolve_url(manifest, "/release/spaceman/files/abc/Spaceman.zip").as_deref(),
-            Some("https://anoma.ly/release/spaceman/files/abc/Spaceman.zip")
+            resolve_url(manifest, "/release/zendows/files/abc/Zendows.zip").as_deref(),
+            Some("https://example.invalid/zendows-updates/files/abc/Zendows.zip")
         );
         assert_eq!(
             resolve_url(
-                "https://dev.anoma.ly/release/spaceman/desktop/dev.json",
-                "/release/spaceman/files/abc/Spaceman.zip"
+                "https://dev.example.invalid/zendows-updates/desktop/dev.json",
+                "/release/zendows/files/abc/Zendows.zip"
             )
             .as_deref(),
-            Some("https://dev.anoma.ly/release/spaceman/files/abc/Spaceman.zip")
+            Some("https://dev.example.invalid/zendows-updates/files/abc/Zendows.zip")
         );
         assert_eq!(
-            resolve_url(manifest, "../files/abc/Spaceman.zip").as_deref(),
-            Some("https://anoma.ly/release/spaceman/files/abc/Spaceman.zip")
+            resolve_url(manifest, "../files/abc/Zendows.zip").as_deref(),
+            Some("https://example.invalid/zendows-updates/files/abc/Zendows.zip")
         );
         assert_eq!(
-            resolve_url(manifest, "files/abc/Spaceman.zip").as_deref(),
-            Some("https://anoma.ly/release/spaceman/desktop/files/abc/Spaceman.zip")
+            resolve_url(manifest, "files/abc/Zendows.zip").as_deref(),
+            Some("https://example.invalid/zendows-updates/desktop/files/abc/Zendows.zip")
         );
         assert_eq!(
             resolve_url(
                 manifest,
-                "https://anoma.ly/release/spaceman/files/abc/Spaceman.zip"
+                "https://example.invalid/zendows-updates/files/abc/Zendows.zip"
             )
             .as_deref(),
-            Some("https://anoma.ly/release/spaceman/files/abc/Spaceman.zip")
+            Some("https://example.invalid/zendows-updates/files/abc/Zendows.zip")
         );
         for elsewhere in [
             "https://example.com/a",

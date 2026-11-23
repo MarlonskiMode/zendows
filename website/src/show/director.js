@@ -72,7 +72,7 @@ const BROWSE = [
   ["Best soda bread", "bakes.example/soda-bread"],
   ["Renewals dashboard", "intranet.example/renewals"],
   ["Weather — Pinecrest", "weather.example/pinecrest"],
-  ["Spaceman — tiling for Mac", "anoma.ly/spaceman"],
+  ["Zendows — tiling for Mac", "github.com/MarlonskiMode/zendows"],
 ]
 // an ordinary list; the drill comes back much later, on Alan's workspace
 const NOTE = [{ t: "Groceries" }, { t: "Fix porch light" }, { t: "Return Alan's drill" }]
@@ -322,10 +322,10 @@ export function build(S) {
   clickAt(find + 0.2, "b3", titleOf, () => w.setFocus("b3"), 0.5)
   clickAt(find + 0.75, "notes2", titleOf, () => w.setFocus("notes2"), 0.5)
   clickAt(find + 1.3, "b6", titleOf, () => w.setFocus("b6"), 0.5)
-  // ── Spaceman: he goes to anoma.ly/spaceman in the Safari window in front and clicks Download on its name;
+  // ── Zendows: he goes to github.com/MarlonskiMode/zendows in the Safari window in front and clicks Download on its name;
   // on "It tiles" it's running (its item in the menu bar) and everything goes side by side ──
   const install = word("Then I installed")
-  const named = word("Spaceman")
+  const named = word("Zendows")
   const tiled = word("It tiles")
   push(install - 0.1, install + 0.5, () => frameOf("b6", 1.15), "b6")
   const field = (id) => {
@@ -343,7 +343,7 @@ export function build(S) {
     w.set("b6", { data: { edit: "", sel: true } })
   }, 0.6, "ibeam")
   // a quick, sure hand: he's typed it before
-  const URL_ = "anoma.ly/spaceman"
+  const URL_ = "github.com/MarlonskiMode/zendows"
   const keys = rhythm(URL_.length, 7).map((dt) => dt * 0.55)
   const tType = tField + 0.2
   at(tType + 0.02, () => w.hideCursor(true))
@@ -359,7 +359,7 @@ export function build(S) {
     S.sfx("key", 0.9)
   })
   span(tGo, tGo + 0.42, (u) => w.set("b6", { data: { load: 0.04 + 0.96 * smooth(u) } }))
-  at(tGo + 0.2, () => w.set("b6", { title: "Spaceman", data: { page: "spaceman", tab: "Spaceman — For your windows.", heading: "Spaceman" } }))
+  at(tGo + 0.2, () => w.set("b6", { title: "Zendows", data: { page: "zendows", tab: "Zendows — For your windows.", heading: "Zendows" } }))
   at(tGo + 0.44, () => w.set("b6", { data: { load: null } }))
   // Download for macOS, as he says its name; the toolbar's download button drops in and fills
   const tDl = Math.max(tGo + 0.8, named - 0.1)
@@ -429,7 +429,7 @@ export function build(S) {
     return [x + px, y + py]
   }
   const myWork = word("My work")
-  float(myWork + 0.05, { id: "settings", app: "spaceman", kind: "settings", title: "Spaceman Settings", at: settingsAt, data: { rules: [], active: [1, 2] } })
+  float(myWork + 0.05, { id: "settings", app: "zendows", kind: "settings", title: "Zendows Settings", at: settingsAt, data: { rules: [], active: [1, 2] } })
   push(myWork + 0.1, myWork + 0.75, settingsFrame, "settings")
   at(myWork + 0.42, () => w.set("settings", { data: { hover: 2 } }))
   clickAt(myWork + 0.6, "settings", inSettings((g) => g.add(2)), () => w.set("settings", { data: { menu: 2 } }), 0.5)
@@ -698,7 +698,7 @@ export function build(S) {
   sw(seven + 0.08, 7, "Thu Feb 26  11:40 PM")
   const things = word("somewhere to put")
   // a glimpse of his rules: Messages on two, the camera app floating, and a new one by window title
-  float(seven + 0.3, { id: "rules7", app: "spaceman", kind: "settings", title: "Spaceman Settings", at: settingsAt, data: { rules: [{ app: "Messages", icon: "chatter", ws: 2 }, ...[["Front Door", 3], ["Alan", 4], ["Juliana", 5], ["Dax", 6]].map(([title, ws]) => ({ app: "Vigil", icon: "vigil", ws, title }))], floats: [{ app: "Vigil", icon: "vigil" }], active: [1, 2, 3, 4, 5, 6] } })
+  float(seven + 0.3, { id: "rules7", app: "zendows", kind: "settings", title: "Zendows Settings", at: settingsAt, data: { rules: [{ app: "Messages", icon: "chatter", ws: 2 }, ...[["Front Door", 3], ["Alan", 4], ["Juliana", 5], ["Dax", 6]].map(([title, ws]) => ({ app: "Vigil", icon: "vigil", ws, title }))], floats: [{ app: "Vigil", icon: "vigil" }], active: [1, 2, 3, 4, 5, 6] } })
   push(seven + 0.35, seven + 0.9, settingsFrame, "rules7")
   at(seven + 0.95, () => {
     w.set("rules7", { data: { hl: 7, rules: [...R("rules7").data.rules, { app: "Vigil", icon: "vigil", ws: 7, title: "Cellar", in: 0 }] } })

@@ -1,4 +1,4 @@
-# Historical: Spaceman Rust + GPUI Plan
+# Historical: Zendows Rust + GPUI Plan
 
 > [!IMPORTANT]
 > This is the original implementation plan, preserved as design history. It includes superseded scope
@@ -12,17 +12,17 @@ Accessibility window identity even though the user still sees one terminal windo
 those physical identities with layout leaves, so opening or selecting a tab can allocate another tile
 and halve the terminal.
 
-Spaceman will make a different concept authoritative: a **logical slot** owns one place in the layout,
+Zendows will make a different concept authoritative: a **logical slot** owns one place in the layout,
 while its current physical `AXWindow` binding is replaceable. A Ghostty tab transition changes that
 binding when the native evidence is unambiguous. It does not insert another logical slot.
 
 The MVP is a signed Rust menu-bar application. GPUI owns the AppKit event loop and one authoritative
-`Entity<Spaceman>`. A narrow native shell provides the status item and macOS notifications. Dedicated
+`Entity<Zendows>`. A narrow native shell provides the status item and macOS notifications. Dedicated
 per-application lanes own Accessibility handles and return immutable Rust observations. The GPUI
 foreground owner reconciles those observations into logical slots and desired frames.
 
 The MVP succeeds when ordinary windows tile on the main display and recorded Ghostty tab sequences
-preserve one logical slot without freezing Spaceman, corrupting layout state, or requiring SIP changes.
+preserve one logical slot without freezing Zendows, corrupting layout state, or requiring SIP changes.
 
 ## Product Principles
 
@@ -33,12 +33,12 @@ preserve one logical slot without freezing Spaceman, corrupting layout state, or
 3. **Incomplete observations never prove absence.** A timed-out application keeps its logical slots.
 4. **One accepted observation produces one model revision.** Native writes then converge windows
    toward that revision with idempotent, best-effort operations.
-5. **Ambiguity is data.** Spaceman preserves the affected application's prior slots and retries rather
+5. **Ambiguity is data.** Zendows preserves the affected application's prior slots and retries rather
    than guessing.
 6. **Native handles stay native.** `AXUIElement`, `AXObserver`, Core Foundation run-loop values, and
    Objective-C objects never enter the logical model or GPUI entities.
 7. **GPUI is the ownership and UI shell.** It does not become a second window-management model.
-8. **No SIP compromise.** Spaceman uses public Accessibility, AppKit, and Core Graphics interfaces
+8. **No SIP compromise.** Zendows uses public Accessibility, AppKit, and Core Graphics interfaces
    plus one dynamically resolved private window-ID function.
 9. **One package until reuse is real.** Ordinary Rust modules are enough for the MVP.
 
@@ -82,7 +82,7 @@ frame convergence.
 - UI/runtime: GPUI pinned to the same reviewed Zed revision used by `cutman-rs` initially,
   `b2a4fb47b1d489f16e8b2f58ed746a9ad883c517`.
 - Native bindings: the coherent `objc2` 0.6 / `objc2-*` 0.3 family.
-- Product state owner: one `Entity<Spaceman>` updated on GPUI's foreground thread.
+- Product state owner: one `Entity<Zendows>` updated on GPUI's foreground thread.
 - Native status item: direct `objc2-app-kit`, because upstream GPUI has no `NSStatusItem` interface.
 - Accessibility: `objc2-application-services` and `objc2-core-foundation`.
 - Display/window server values: `objc2-core-graphics`.
@@ -94,7 +94,7 @@ frame convergence.
 - Initial deployment target: macOS 15. Ghostty behavior is fixture-qualified by version, beginning
   with Ghostty 1.3.1 on macOS 26; releases publish the exact tested matrix.
 
-Spaceman does not use Bevy, an ECS, a Redux-like store, or a trait per native operation.
+Zendows does not use Bevy, an ECS, a Redux-like store, or a trait per native operation.
 
 ## System Shape
 
@@ -106,7 +106,7 @@ AppKit / NSWorkspace / display / power / hotkey callbacks
                    RuntimeInput values
                          |
                          v
-              Entity<Spaceman> in GPUI
+              Entity<Zendows> in GPUI
          scheduling + authoritative logical model
                          |
                start observation cycle
@@ -130,7 +130,7 @@ AppKit / NSWorkspace / display / power / hotkey callbacks
 
 ## Authoritative State
 
-Only `Entity<Spaceman>` owns product state:
+Only `Entity<Zendows>` owns product state:
 
 ```rust
 struct Model {
@@ -264,7 +264,7 @@ output area without overlap. Applied application frames may differ because appli
 minimum sizes or character-cell increments; readback reports that difference rather than rewriting
 the target invariant.
 
-### `Spaceman` Owns Runtime Serialization
+### `Zendows` Owns Runtime Serialization
 
 The authoritative GPUI entity dispatches semantic commands and consumes runtime inputs. It owns:
 
@@ -392,11 +392,11 @@ order, weight, and target remain unchanged.
 If stale/new candidates are ambiguous, affected slots enter `BindingState::Unresolved` and
 reconciliation commits no insertion or removal for that application. Unresolved slots preserve their
 logical position but receive no focus or frame writes. Other complete applications may still commit.
-Spaceman emits a sanitized `native_tab_ambiguous` decision and retries after settling or periodic
+Zendows emits a sanitized `native_tab_ambiguous` decision and retries after settling or periodic
 reconciliation.
 
 A later unambiguous complete observation resolves the binding. If the same ambiguity remains after a
-bounded settling window, Spaceman stops rapid retries, keeps the application unresolved, and exposes
+bounded settling window, Zendows stops rapid retries, keeps the application unresolved, and exposes
 `ResyncApplication`. That explicit recovery rebuilds only the selected application's slots from its
 current complete active windows and appends them deterministically; unrelated slots remain intact.
 This favors visible, user-authorized recovery over a permanent stale binding or an automatic guess.
@@ -422,7 +422,7 @@ Geometry is corroborating evidence, never general identity. Real top-level windo
 
 ## Mouse And Drag Policy
 
-Spaceman does not fight user drags.
+Zendows does not fight user drags.
 
 - Before committing topology changes or frame writes, query current left-button state through Core
   Graphics.
@@ -438,7 +438,7 @@ remain outside the MVP; an ordinary dragged window returns to its desired frame 
 
 The MVP manages a physical window only when all of these hold:
 
-- It belongs to an application other than Spaceman.
+- It belongs to an application other than Zendows.
 - The application is not hidden.
 - AX role is `AXWindow` and subrole is `AXStandardWindow`.
 - Position and size are readable and settable.
@@ -456,7 +456,7 @@ MVP behavior by state:
 | Native fullscreen | Unmanaged |
 | Dialog, sheet, panel, or popup | Unmanaged |
 | Fixed-size or immovable window | Unmanaged with diagnostic |
-| Spaceman-owned window | Always excluded |
+| Zendows-owned window | Always excluded |
 | Observation unavailable | Preserve prior slots |
 | Process terminated | Remove its slots |
 
@@ -519,22 +519,22 @@ struct AppliedFrameState {
 ```
 
 When an app constrains a target and later observations still match the accepted constrained `actual`,
-Spaceman does not retry on every periodic cycle. The constraint clears when the target changes, the
+Zendows does not retry on every periodic cycle. The constraint clears when the target changes, the
 user requests `Retile`, the observed frame departs from the constrained actual, or the binding changes.
 Therefore a user drag snaps back after release while a stable app-enforced minimum size does not loop.
 
-Move/resize callbacks do not carry Spaceman generations. Every callback still invalidates. Readback
+Move/resize callbacks do not carry Zendows generations. Every callback still invalidates. Readback
 and the bounded apply evidence decide whether another write is needed; recent timing alone never hides
 a mismatching user move or application constraint.
 
 ## GPUI And Native Shell
 
-GPUI owns `NSApplication` and the main AppKit event loop. Spaceman must not start another main
+GPUI owns `NSApplication` and the main AppKit event loop. Zendows must not start another main
 `CFRunLoop`.
 
-The pinned GPUI macOS platform currently forces regular activation policy during launch. Spaceman's
+The pinned GPUI macOS platform currently forces regular activation policy during launch. Zendows's
 launch callback resets `NSApplication` to accessory policy before opening any window. Milestone 0
-must prove that this produces no persistent Dock icon. If it flickers or regresses, Spaceman will
+must prove that this produces no persistent Dock icon. If it flickers or regresses, Zendows will
 vendor a minimal `gpui_macos` activation-policy patch rather than spreading the workaround.
 
 Upstream GPUI has no status-item interface. `NativeShell` directly owns and retains:
@@ -583,7 +583,7 @@ Deliver:
 - Signed app bundle with `LSUIElement = true` and bundle ID `com.kitlangton.spaceman`.
 - GPUI event loop running with zero windows.
 - Accessory activation policy with no persistent Dock icon.
-- Native status item and menu callbacks reaching `Entity<Spaceman>`.
+- Native status item and menu callbacks reaching `Entity<Zendows>`.
 - Accessibility trust check, prompt, and status refresh.
 - Dynamic `_AXUIElementGetWindow` capability check and explicit unsupported state.
 - Global-hotkey spike under frontmost Ghostty, Zed, Electron, and ordinary AppKit apps.
@@ -616,7 +616,7 @@ Acceptance:
 
 - Opening, focusing, hiding, minimizing, restoring, and closing fixture windows produces coherent
   observations without moving them.
-- A deliberately hung fixture application becomes unavailable while Spaceman's menu and other app
+- A deliberately hung fixture application becomes unavailable while Zendows's menu and other app
   observations remain responsive.
 - Ghostty tab transitions and two tab groups are captured as versioned fixtures.
 - Secondary-display and native-Space windows are excluded without being moved.
@@ -660,7 +660,7 @@ Acceptance:
 - A constrained window reports its actual frame and does not create an unbounded write loop.
 - A user drag whose observed frame departs from accepted constrained evidence retries the desired
   frame after release.
-- Dragging never causes Spaceman to fight the pointer before release.
+- Dragging never causes Zendows to fight the pointer before release.
 
 ### Milestone 4: Add Navigation If The Spike Passed
 
@@ -741,7 +741,7 @@ Opt-in macOS integration tests cover:
 GPUI / AppKit callbacks
           |
           v
-Spaceman runtime + pure model
+Zendows runtime + pure model
           |
           v
 macOS native implementation
@@ -773,7 +773,7 @@ cross-thread wrapper; it exposes no AX or run-loop access.
 Development follows the proven `cutman-rs` workflow:
 
 - Build a complete `.app` bundle.
-- Install it at `~/Applications/Spaceman.app`.
+- Install it at `~/Applications/Zendows.app`.
 - Use a stable bundle ID and signing identity.
 - Verify the designated requirement and reject ad-hoc signing.
 - Request Accessibility only from the installed bundle, never `cargo run`.
@@ -813,4 +813,4 @@ Inactive virtual workspaces may eventually park windows off-screen, but that beh
 separate design for focus, displays, recovery, and visible slivers. It is not assumed by the MVP.
 
 The load-bearing invariant must survive every later feature: native physical windows are observations;
-logical slots are Spaceman's product state.
+logical slots are Zendows's product state.

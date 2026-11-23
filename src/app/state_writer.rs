@@ -37,7 +37,7 @@ impl StateWriter {
         let shared = Arc::new(Shared::default());
         let thread_shared = Arc::clone(&shared);
         let threaded = match thread::Builder::new()
-            .name("spaceman-state-writer".into())
+            .name("zendows-state-writer".into())
             .spawn(move || run(&thread_shared))
         {
             Ok(_) => true,
@@ -131,7 +131,7 @@ mod tests {
     #[test]
     fn writes_the_latest_contents_and_flushes() {
         let directory =
-            std::env::temp_dir().join(format!("spaceman-state-writer-{}", std::process::id()));
+            std::env::temp_dir().join(format!("zendows-state-writer-{}", std::process::id()));
         let path = directory.join("state.json");
         let writer = StateWriter::spawn();
         for value in 0..50 {

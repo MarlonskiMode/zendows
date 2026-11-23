@@ -21,16 +21,16 @@ function Header() {
     <header className="relative isolate flex h-16 items-center justify-between px-5 sm:h-[72px] sm:px-7">
       {/* keeps the links legible over the lit window in the still */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[170%] bg-[linear-gradient(to_bottom,rgb(8_8_10/0.72),rgb(8_8_10/0.4)_45%,rgb(8_8_10/0.12)_75%,transparent)]" />
-      <a href="./" aria-label="Spaceman" className="flex items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/60">
+      <a href="./" aria-label="Zendows" className="flex items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/60">
         <img src="icon-192.png" alt="" width={28} height={28} className="size-7 rounded-[23%] shadow-[0_2px_8px_rgb(0_0_0/0.45)] ring-1 ring-white/15" />
-        <span className="text-[15px] font-semibold tracking-[-0.015em] text-[#f5f5f7] [text-shadow:0_1px_8px_rgb(0_0_0/0.5)]">Spaceman</span>
+        <span className="text-[15px] font-semibold tracking-[-0.015em] text-[#f5f5f7] [text-shadow:0_1px_8px_rgb(0_0_0/0.5)]">Zendows</span>
       </a>
       <nav aria-label="Site" className="flex items-center gap-6 text-[13px] text-[#dfe1e5] [text-shadow:0_1px_8px_rgb(0_0_0/0.6)]">
         <a href="#features" className="hidden transition-colors hover:text-white sm:inline">Features</a>
         <a href="#shortcuts" className="hidden transition-colors hover:text-white sm:inline">Shortcuts</a>
         <a
-          href="https://github.com/anomalyco/spaceman"
-          aria-label="Spaceman on GitHub"
+          href="https://github.com/MarlonskiMode/zendows"
+          aria-label="Zendows on GitHub"
           className="inline-flex items-center gap-1.5 transition-colors hover:text-white"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -51,7 +51,7 @@ function Hero({ start }: { start: () => void }) {
       <div className="flex max-w-[36rem] flex-col gap-3">
         <h1 className="text-[clamp(44px,6.4vw,76px)] leading-[0.96] font-semibold tracking-[-0.04em] text-balance">For your windows.</h1>
         <p className="max-w-[30rem] text-[17px] leading-[1.5] text-pretty text-[#c4c6cc]">
-          Spaceman is a tiling window manager for macOS. Every window side by side, nothing on top of anything else.
+          Zendows is a tiling window manager for macOS. Every window side by side, nothing on top of anything else.
         </p>
       </div>
       <div className="flex flex-col gap-3">
@@ -102,10 +102,10 @@ function Product() {
             Switch native tabs, in Ghostty for one, and the window keeps its tile, its size and its place in the layout.
           </Feature>
           <Feature title="Your windows come back" demo={<RestoreDemo />}>
-            Pausing, quitting or updating Spaceman brings every hidden window back where it was. It remembers where each one goes before it moves it.
+            Pausing, quitting or updating Zendows brings every hidden window back where it was. It remembers where each one goes before it moves it.
           </Feature>
           <Feature title="Accessibility, and nothing else" demo={<AccessStill />}>
-            System Integrity Protection stays on. Window titles stay in memory: Spaceman never saves, logs or sends them, and nothing reports home.
+            System Integrity Protection stays on. Window titles stay in memory: Zendows never saves, logs or sends them, and nothing reports home.
           </Feature>
         </div>
       </section>
@@ -129,7 +129,7 @@ function Product() {
         <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
           <div className="flex max-w-[30rem] flex-col gap-4">
             <img src="icon-192.png" alt="" width={64} height={64} className="size-16" />
-            <h2 id="download-title" className="text-[clamp(28px,3.6vw,40px)] leading-[1.1] font-semibold tracking-[-0.03em]">Get Spaceman.</h2>
+            <h2 id="download-title" className="text-[clamp(28px,3.6vw,40px)] leading-[1.1] font-semibold tracking-[-0.03em]">Get Zendows.</h2>
             <p className="text-[15px] leading-[1.6] text-pretty text-[#9a9ca3]">
               Free, signed and notarized. It's a preview, so turn off any other window manager first; the setup tour asks for Accessibility access.
             </p>
@@ -154,7 +154,7 @@ function Footer() {
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="flex items-center gap-2.5">
           <img src="icon-192.png" alt="" width={20} height={20} className="size-5 rounded-[23%] ring-1 ring-white/10" />
-          <span className="text-[#c4c6cc]">Spaceman {RELEASE_VERSION}</span>
+          <span className="text-[#c4c6cc]">Zendows {RELEASE_VERSION}</span>
           <span aria-hidden="true">·</span>
           <span>
             Built with{" "}
@@ -164,7 +164,7 @@ function Footer() {
           </span>
         </p>
         <nav aria-label="Documentation" className="flex flex-wrap gap-x-6 gap-y-2">
-          <a href="https://github.com/anomalyco/spaceman" className="transition-colors hover:text-[#f3f4f6]">GitHub</a>
+          <a href="https://github.com/MarlonskiMode/zendows" className="transition-colors hover:text-[#f3f4f6]">GitHub</a>
           <a href="llms-full.txt" className="transition-colors hover:text-[#f3f4f6]">Documentation</a>
           <a href="skill.md" className="transition-colors hover:text-[#f3f4f6]">Setup skill for agents</a>
           <a href="llms.txt" className="transition-colors hover:text-[#f3f4f6]">llms.txt</a>
@@ -324,7 +324,7 @@ function TilingDemo() {
 // apps by colour, per workspace
 const SPACES = [[0, 1, 2], [3, 4], [5]];
 
-// the Icons bar Spaceman shows on a switch: each number with its apps, a marker on the current one
+// the Icons bar Zendows shows on a switch: each number with its apps, a marker on the current one
 function WorkspacesDemo() {
   const [ref, i] = useCycle(3, 2000);
   return (
@@ -403,7 +403,7 @@ function RulesStill() {
   );
 }
 
-// Pause Tiling: the parked windows come back to the frames they had before Spaceman moved them
+// Pause Tiling: the parked windows come back to the frames they had before Zendows moved them
 const PLACED: R[] = [{ x: 0.06, y: 0.18, w: 0.42, h: 0.52 }, { x: 0.36, y: 0.3, w: 0.44, h: 0.5 }, { x: 0.55, y: 0.14, w: 0.38, h: 0.44 }];
 
 function RestoreDemo() {
@@ -426,10 +426,10 @@ function RestoreDemo() {
   );
 }
 
-// the one permission Spaceman asks for, as System Settings shows it
+// the one permission Zendows asks for, as System Settings shows it
 function AccessStill() {
   const rows = [
-    { name: "Spaceman", on: true, icon: <img src="icon-192.png" alt="" className="size-full" /> },
+    { name: "Zendows", on: true, icon: <img src="icon-192.png" alt="" className="size-full" /> },
     { name: "Terminal", on: false, icon: <span className="block size-full rounded-[5px] bg-[#2a2c31]" /> },
     { name: "Script Editor", on: false, icon: <span className="block size-full rounded-[5px] bg-[#c9ccd2]" /> },
   ];

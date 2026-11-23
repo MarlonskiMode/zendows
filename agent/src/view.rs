@@ -157,7 +157,7 @@ fn pane_header(p: Paint, title: &str) -> El {
         )
 }
 
-/// A save that failed, a config file Spaceman can't read, or an agent error such as
+/// A save that failed, a config file Zendows can't read, or an agent error such as
 /// unavailable hotkeys, which used to be visible only through the control socket.
 fn error_banner(ui: &Ui, p: Paint) -> Option<El> {
     let agent_error = ui

@@ -663,7 +663,7 @@ export class World {
 
   menu() {
     const res = Math.min(4, this.res)
-    // the Spaceman item fades and grows in over a quarter second when it first appears
+    // the Zendows item fades and grows in over a quarter second when it first appears
     const sIn = this.status ? Math.min(1, Math.max(0, (this.time - (this.statusIn ?? -9)) / 0.28)) : 0
     const key = this.clock + this.frontApp + sIn.toFixed(2) + this.active + res
     if (this.menuCanvas && key === this.menuKey) return this.menuCanvas
@@ -698,7 +698,7 @@ export class World {
     let r = this.SW - 14
     ctx.fillText(this.clock, r, mid)
     r -= ctx.measureText(this.clock).width + 16
-    // status items, right to left: battery, wifi, then Spaceman's workspace number
+    // status items, right to left: battery, wifi, then Zendows's workspace number
     battery(ctx, r - 24, mid, ink)
     r -= 40
     wifi(ctx, r - 9, mid + 5, ink)

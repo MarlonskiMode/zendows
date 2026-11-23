@@ -25,7 +25,7 @@ use rune::{
     Color, Cursor, El, Pixels, Spring, Transition, Tx, el, icon, row, text,
     tok::motion::pair::SETTLE,
 };
-use spaceman::{
+use zendows::{
     WorkspaceId,
     app::{UiHudDisplay, UiHudWorkspace},
     config::HudStyle,
@@ -281,7 +281,7 @@ fn settings_gear(active: bool, p: Paint, interactive: bool) -> El {
     if interactive {
         button = button
             .role("button")
-            .label("Open Spaceman Settings")
+            .label("Open Zendows Settings")
             .cursor(Cursor::Pointer)
             .hover(rgba(0xffffff, 0.10))
             .press(rgba(0xffffff, 0.16))

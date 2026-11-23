@@ -54,7 +54,7 @@ const LIGHTS = ["#ff5f57", "#febc2e", "#28c840"]
 function chrome(ctx, w, win, focused) {
   const dark = win.dark
   const kind = win.kind
-  // Spaceman's own window has no title bar: its sidebar and panel run to the top, under the lights
+  // Zendows's own window has no title bar: its sidebar and panel run to the top, under the lights
   const bare = kind === "settings"
   if (!bare) ctx.clearRect(0, 0, w, BAR_H)
   ctx.fillStyle = bare ? "rgba(0,0,0,0)" : kind === "sticky" ? "#f6e08a" : dark ? (focused ? "#2c2c2e" : "#323234") : focused ? "#ebebeb" : "#f5f5f5"
@@ -1231,7 +1231,7 @@ const painters = {
     const top = BAR_H + (n > 1 ? TB : 0)
     ctx.fillStyle = PAGE
     ctx.fillRect(0, top, w, h - top)
-    if (d.page === "spaceman") return sitePage(ctx, w, h, top, d)
+    if (d.page === "zendows") return sitePage(ctx, w, h, top, d)
     if (d.tab === "New Tab") return startPage(ctx, w, h, top)
     if (d.lines) return storePage(ctx, w, h, top, d)
     const cw = Math.min(w - 52, 620)
@@ -1380,7 +1380,7 @@ const painters = {
       ctx.fillRect(x, top, 1, h)
     }
   },
-  // Spaceman's Settings, as agent/src/view.rs and map.rs draw it: the panes under the lights, and
+  // Zendows's Settings, as agent/src/view.rs and map.rs draw it: the panes under the lights, and
   // the Rules pane's map, a tile per workspace with the apps that open there
   settings(ctx, w, h, d, win, focused) {
     const G = settingsGeom(w, h)

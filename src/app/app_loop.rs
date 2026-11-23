@@ -323,7 +323,7 @@ impl MainThreadAgent {
                     }
                 }
                 // Every parked window is back on screen: only now may the
-                // bundle be swapped and Spaceman relaunch into it.
+                // bundle be swapped and Zendows relaunch into it.
                 WorkerResult::Restored { failed: 0 }
                     if self.exit_intent == Some(ExitIntent::Update) =>
                 {
@@ -542,7 +542,7 @@ impl MainThreadAgent {
         }
         let focus = permission_guide::settings_focus();
         if self.return_from_settings.poll(Instant::now(), focus) {
-            log_event!("accessibility granted in System Settings; bringing Spaceman forward");
+            log_event!("accessibility granted in System Settings; bringing Zendows forward");
             if let Err(error) = (self.callbacks.open_settings)() {
                 status_item::set_status(&format!("Could not open Settings: {error}"));
             }

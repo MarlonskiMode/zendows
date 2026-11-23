@@ -163,7 +163,7 @@ impl UiLaunchAtLogin {
 /// What the in-app updater is doing (`crate::updater`).
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum UiUpdateStatus {
-    /// Updates are off for this copy: turned off, or not in a `Spaceman.app`.
+    /// Updates are off for this copy: turned off, or not in a `Zendows.app`.
     #[default]
     Unavailable,
     /// A build from source, which its checkout updates.
@@ -187,7 +187,7 @@ pub enum UiUpdateStatus {
     Download {
         version: String,
     },
-    /// Windows are restored and the update is swapped in; Spaceman relaunches.
+    /// Windows are restored and the update is swapped in; Zendows relaunches.
     Installing,
     Failed,
 }

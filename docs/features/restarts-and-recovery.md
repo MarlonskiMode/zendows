@@ -6,10 +6,10 @@ workspaces and layouts; when something looks wrong, find out what happened.
 ## Sub-features
 
 ```ts
-Spaceman restarts, apps keep running                       // recover.resume
+Zendows restarts, apps keep running                       // recover.resume
 └── workspace-state.json valid -> same workspaces, layouts, Fullscreen Layout, last focus
 
-Pause / quit / update / macOS asks Spaceman to terminate   // recover.restore-on-exit
+Pause / quit / update / macOS asks Zendows to terminate   // recover.restore-on-exit
 ├── Every parked window moved back to its original frame
 │   └── that frame's display unplugged -> moved onto the main display instead
 ├── Recovery entry removed only after the window server confirms arrival
@@ -17,10 +17,10 @@ Pause / quit / update / macOS asks Spaceman to terminate   // recover.restore-on
 └── Restoration fails -> exit blocked, menu shows "Restoring windows · N failed", retries
 
 Install & Restart (in-app update)                          // recover.update
-├── Update downloaded and verified first (size, SHA-256, anomaly.spaceman, Developer ID, team)
+├── Update downloaded and verified first (size, SHA-256, com.marlonskimode.zendows, Developer ID, team)
 ├── Same exit as quit: tiling stops, every parked window restored
 ├── Only after restoration fully succeeds -> signature re-checked, bundles swapped, relaunch
-└── Install fails after restoration -> Spaceman keeps running, tiling resumes, menu says why
+└── Install fails after restoration -> Zendows keeps running, tiling resumes, menu says why
 
 Quit with an update ready                                  // recover.update
 ├── Same exit as quit: every parked window restored
@@ -33,7 +33,7 @@ Crash or hard kill                                         // recover.crash
 
 Placement recall (reboot, fresh start, or app relaunch)     // recover.memory
 ├── Old slots for dead processes retire
-├── During the first 60 s after Spaceman starts, each unseen bundle's first instance may claim
+├── During the first 60 s after Zendows starts, each unseen bundle's first instance may claim
 │   remembered placements
 │   ├── recall closes early once every placement is claimed or the app quits
 │   ├── frame match (8 px) first, then creation order
@@ -48,10 +48,10 @@ Placement recall (reboot, fresh start, or app relaunch)     // recover.memory
 
 Diagnose                                                   // recover.doctor
 ├── Settings › Activity -> 24h health, recent journal rows, procwatch vitals, Save Snapshot
-├── spaceman doctor [hours] -> starts, restorations, recalls, wrong placements, anomalies,
+├── zendows doctor [hours] -> starts, restorations, recalls, wrong placements, anomalies,
 │                                last arrangement
-├── spaceman ctl wrong -> marks the journal and snapshots the arrangement right now
-├── spaceman ctl debug / spaceman hud -> live sanitized model
+├── zendows ctl wrong -> marks the journal and snapshots the arrangement right now
+├── zendows ctl debug / zendows hud -> live sanitized model
 └── agent.log (+ .prev) -> decisions, slow worker commands, worker errors (not routine cancellations)
 ```
 
@@ -59,16 +59,16 @@ Diagnose                                                   // recover.doctor
 
 ```ts
 Menu bar: workspaces (switch) | Pause Tiling (pause + restore) | Workspace HUD | Settings... (⌘,)
-          | Check for Updates... / Install Spaceman <version> and Restart | Quit Spaceman (⌘Q)
+          | Check for Updates... / Install Zendows <version> and Restart | Quit Zendows (⌘Q)
 Settings: sidebar foot and General -> Updates (Install & Restart, Switch to Dev/Stable, Download,
           Check Now, Update channel)
 Settings: Activity -> Journal (Show in Finder) | Save Snapshot
-CLI:      spaceman ctl pause | resume | quit | restart | status | debug
-          spaceman doctor [hours]      // reads files directly; works with the agent stopped
-          spaceman hud
+CLI:      zendows ctl pause | resume | quit | restart | status | debug
+          zendows doctor [hours]      // reads files directly; works with the agent stopped
+          zendows hud
 Implicit: macOS restart/log out/shutdown, Install & Restart, quitting with an update ready,
-          reopening Spaceman.app after a crash
-Files:    ~/Library/Application Support/Spaceman/
+          reopening Zendows.app after a crash
+Files:    ~/Library/Application Support/Zendows/
           ├── workspace-state.json   parked-windows.json   window-memory.json
           └── journal.jsonl(.1)      agent.log(.1)
 ```
@@ -93,9 +93,9 @@ See [Recovery](../recovery.md) for the safe manual procedure; never delete `park
   `src/window_memory.rs` and `src/journal.rs` cover matching, eviction, diffing, debouncing,
   rotation, and the doctor summary. None involves a real reboot.
 - Unit, `src/updater/`: manifest decisions (the release service's shared vectors), download URLs
-  confined to `anoma.ly/release/spaceman/files/`, size/SHA-256 checks, bundle identity, signature
+  confined to `example.invalid/zendows-updates/files/`, size/SHA-256 checks, bundle identity, signature
   and team checks (ad-hoc bundles must fail Anomaly's requirement), the zip holding exactly
-  `Spaceman.app`, the bundle swap and staging cleanup, the install receipt and staged-update state,
+  `Zendows.app`, the bundle swap and staging cleanup, the install receipt and staged-update state,
   `If-None-Match`/304 manifest caching, `Range` resumes (206, 200 and 416), the build stamp in the
   `User-Agent`, channel-switch confirmation, the download-only plan, and the quit-time install's
   state and receipt. The exit paths themselves (`Restored { failed: 0 }` under `ExitIntent::Update`
@@ -110,10 +110,10 @@ See [Recovery](../recovery.md) for the safe manual procedure; never delete `park
 
 ## Gotchas
 
-- **Reboot is unproven.** No test or observation yet covers: Spaceman restoring before other apps
+- **Reboot is unproven.** No test or observation yet covers: Zendows restoring before other apps
   save their window positions at shutdown, or memory recall after login. On 2026-10-01 apps
-  relaunched at Spaceman's off-screen parking edge after a reboot, suggesting they saved parked
-  frames; read `spaceman doctor` after the next reboot.
+  relaunched at Zendows's off-screen parking edge after a reboot, suggesting they saved parked
+  frames; read `zendows doctor` after the next reboot.
 - Memory restores the workspace and floating state during a recall, not tile position
   or weight; multi-window apps reopening with identical frames are matched by creation order and can
   swap workspaces.

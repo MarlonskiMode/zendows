@@ -3,7 +3,7 @@
 
 use rune::{El, Tx, el, row, text};
 use rune_kit::SegmentedControl;
-use spaceman::{app::UiUpdateStatus, config::UpdateChannel};
+use zendows::{app::UiUpdateStatus, config::UpdateChannel};
 
 use crate::{
     Ui,
@@ -16,7 +16,7 @@ const CHANNELS: [(&str, UpdateChannel); 2] = [
 ];
 
 /// The version this build was released as (the Release workflow's stamp), else Cargo's.
-const VERSION: &str = match option_env!("SPACEMAN_RELEASE_VERSION") {
+const VERSION: &str = match option_env!("ZENDOWS_RELEASE_VERSION") {
     Some(version) => version,
     None => env!("CARGO_PKG_VERSION"),
 };
@@ -40,23 +40,23 @@ fn describe(status: &UiUpdateStatus) -> String {
     match status {
         UiUpdateStatus::Idle => "Checks for updates automatically.".into(),
         UiUpdateStatus::Checking => "Checking for updates…".into(),
-        UiUpdateStatus::UpToDate => "Spaceman is up to date.".into(),
+        UiUpdateStatus::UpToDate => "Zendows is up to date.".into(),
         UiUpdateStatus::Downloading => "Downloading an update…".into(),
         UiUpdateStatus::Ready { version } => {
-            format!("Spaceman {version} is ready. Windows are restored before it restarts.")
+            format!("Zendows {version} is ready. Windows are restored before it restarts.")
         }
         UiUpdateStatus::Switch { channel, version } => format!(
-            "Switching to {} installs Spaceman {version}.",
+            "Switching to {} installs Zendows {version}.",
             channel_label(channel)
         ),
         UiUpdateStatus::Download { version } => format!(
-            "Spaceman {version} is out. This copy can't replace itself, so download it, \
-             or move Spaceman to Applications to update in place."
+            "Zendows {version} is out. This copy can't replace itself, so download it, \
+             or move Zendows to Applications to update in place."
         ),
         UiUpdateStatus::Installing => "Installing and restarting…".into(),
         UiUpdateStatus::Failed => "Couldn't check for updates. It tries again soon.".into(),
         UiUpdateStatus::SourceBuild => "Built from source; your checkout updates it.".into(),
-        UiUpdateStatus::Unavailable => "Updates are off for this copy of Spaceman.".into(),
+        UiUpdateStatus::Unavailable => "Updates are off for this copy of Zendows.".into(),
     }
 }
 
@@ -88,7 +88,7 @@ pub fn sidebar(ui: &Ui, p: Paint) -> El {
     }
     let label = match update {
         UiUpdateStatus::Checking => "Checking for updates…",
-        UiUpdateStatus::UpToDate => "Spaceman is up to date",
+        UiUpdateStatus::UpToDate => "Zendows is up to date",
         UiUpdateStatus::Downloading => "Downloading update…",
         UiUpdateStatus::Switch { .. } => "Channel switch ready",
         UiUpdateStatus::Download { .. } => "Update available",
@@ -167,7 +167,7 @@ pub fn section(ui: &Ui, p: Paint) -> El {
     let version = controls::setting_row(
         p,
         "version",
-        &format!("Spaceman {VERSION}"),
+        &format!("Zendows {VERSION}"),
         Some((describe(&update), color)),
         control,
     );

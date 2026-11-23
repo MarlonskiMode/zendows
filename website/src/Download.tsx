@@ -18,9 +18,9 @@ export function downloadNote(p: Platform): string {
     case "mac-intel":
       return "Needs a Mac with Apple silicon.";
     case "mobile":
-      return "Spaceman runs on your Mac.";
+      return "Zendows runs on your Mac.";
     default:
-      return "Spaceman is for Macs with Apple silicon.";
+      return "Zendows is for Macs with Apple silicon.";
   }
 }
 
@@ -36,7 +36,7 @@ export function Download({ align = "start", note = true }: { align?: "start" | "
   const p = usePlatform();
   const [sent, setSent] = useState(false);
   const share = async () => {
-    const data = { title: "Spaceman", text: "Spaceman, a tiling window manager for macOS", url: SITE_URL };
+    const data = { title: "Zendows", text: "Zendows, a tiling window manager for macOS", url: SITE_URL };
     try {
       if (p.kind === "mobile" && navigator.share) await navigator.share(data);
       else await navigator.clipboard.writeText(SITE_URL);

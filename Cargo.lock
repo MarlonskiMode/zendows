@@ -3435,45 +3435,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "spaceman"
-version = "0.3.3"
-dependencies = [
- "block2 0.6.2",
- "cc",
- "ctrlc",
- "libc",
- "objc2 0.6.5",
- "objc2-app-kit 0.3.2",
- "objc2-application-services",
- "objc2-core-foundation",
- "objc2-core-graphics",
- "objc2-foundation 0.3.2",
- "objc2-service-management",
- "serde",
- "serde_json",
- "sha2",
- "toml",
- "ureq",
-]
-
-[[package]]
-name = "spaceman-agent"
-version = "0.3.3"
-dependencies = [
- "block2 0.6.2",
- "objc2 0.6.5",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.3.2",
- "procwatch",
- "rune",
- "rune-kit",
- "rune-mac",
- "rune-theme-opencode",
- "spaceman",
- "toml_edit 0.23.10+spec-1.0.0",
-]
-
-[[package]]
 name = "spellbook"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4954,6 +4915,45 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d1afec51604565183aeb5c54c20aeab286120d4e4460f7f76e3e8bb8c0d99473"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "zendows"
+version = "0.3.3"
+dependencies = [
+ "block2 0.6.2",
+ "cc",
+ "ctrlc",
+ "libc",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-application-services",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-foundation 0.3.2",
+ "objc2-service-management",
+ "serde",
+ "serde_json",
+ "sha2",
+ "toml",
+ "ureq",
+]
+
+[[package]]
+name = "zendows-agent"
+version = "0.3.3"
+dependencies = [
+ "block2 0.6.2",
+ "objc2 0.6.5",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "procwatch",
+ "rune",
+ "rune-kit",
+ "rune-mac",
+ "rune-theme-opencode",
+ "toml_edit 0.23.10+spec-1.0.0",
+ "zendows",
 ]
 
 [[package]]

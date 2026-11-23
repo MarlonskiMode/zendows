@@ -5,7 +5,7 @@
 
 use rune::{Cursor, El, PointerPress, Tx, el, row, text};
 use rune_kit::{Menu as KitMenu, MenuItem, Placement};
-use spaceman::WorkspaceId;
+use zendows::WorkspaceId;
 
 use crate::{
     Menu, Pane, Ui,

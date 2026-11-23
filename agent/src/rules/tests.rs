@@ -1,6 +1,6 @@
 use super::*;
 
-const SOURCE: &str = r#"# Spaceman configuration.
+const SOURCE: &str = r#"# Zendows configuration.
 version = 1
 
 [[rules]]
@@ -54,7 +54,7 @@ fn moving_a_rule_keeps_comments_and_the_rest_of_the_file() {
     let rules = Doc::parse(&source).rules();
     assert_eq!(rules[0].place, Place::Workspace(ws("3")));
     assert_eq!(rules[1].place, Place::Float);
-    assert!(spaceman::config::Config::parse(&source).is_ok());
+    assert!(zendows::config::Config::parse(&source).is_ok());
     assert!(
         source.contains("workspace = 3\n"),
         "numbers stay integers:\n{source}"
@@ -80,7 +80,7 @@ fn adds_and_removes_rules() {
 fn adds_to_an_empty_file() {
     let mut doc = Doc::parse(EMPTY);
     doc.add("anomaly.hex", Place::Float);
-    assert!(spaceman::config::Config::parse(&doc.source()).is_ok());
+    assert!(zendows::config::Config::parse(&doc.source()).is_ok());
     assert_eq!(doc.rules().len(), 1);
 }
 
@@ -129,19 +129,19 @@ fn hud_setting_round_trips_and_cleans_up_default_table() {
     doc.set_hud(false);
     assert!(!doc.hud());
     let disabled = doc.source();
-    assert!(!spaceman::config::Config::parse(&disabled).unwrap().hud());
+    assert!(!zendows::config::Config::parse(&disabled).unwrap().hud());
     assert!(disabled.contains("# OpenCode Browser's agent window."));
 
     doc.set_hud(true);
     assert!(doc.hud());
     let enabled = doc.source();
-    assert!(spaceman::config::Config::parse(&enabled).unwrap().hud());
+    assert!(zendows::config::Config::parse(&enabled).unwrap().hud());
     assert!(!enabled.contains("[settings]"));
 }
 
 #[test]
 fn hud_style_round_trips_and_leaves_the_default_out() {
-    use spaceman::config::{Config, HudStyle};
+    use zendows::config::{Config, HudStyle};
     let mut doc = Doc::parse(SOURCE);
     assert_eq!(doc.hud_style(), HudStyle::Icons);
     doc.set_hud_style(HudStyle::Layouts);
@@ -164,7 +164,7 @@ fn hud_style_round_trips_and_leaves_the_default_out() {
 
 #[test]
 fn update_channel_round_trips_and_leaves_stable_out() {
-    use spaceman::config::{Config, UpdateChannel};
+    use zendows::config::{Config, UpdateChannel};
     let mut doc = Doc::parse(SOURCE);
     assert_eq!(doc.update_channel(), UpdateChannel::Stable);
     doc.set_update_channel(UpdateChannel::Dev);

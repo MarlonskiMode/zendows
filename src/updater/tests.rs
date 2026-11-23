@@ -1,7 +1,7 @@
 use super::*;
 
 fn temporary(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("spaceman-updater-{name}-{}", std::process::id()));
+    let path = std::env::temp_dir().join(format!("zendows-updater-{name}-{}", std::process::id()));
     drop(std::fs::remove_dir_all(&path));
     std::fs::create_dir_all(&path).unwrap();
     path
@@ -11,9 +11,9 @@ fn staged(version: &str, sha: char) -> StagedUpdate {
     StagedUpdate {
         staged: bundle::Staged {
             update: PathBuf::from(format!(
-                "/nonexistent/.Spaceman-update-{version}/Spaceman.app"
+                "/nonexistent/.Zendows-update-{version}/Zendows.app"
             )),
-            installed: PathBuf::from("/nonexistent/Spaceman.app"),
+            installed: PathBuf::from("/nonexistent/Zendows.app"),
         },
         sha256: sha.to_string().repeat(64),
         version: version.into(),
@@ -98,7 +98,7 @@ fn the_rollout_bucket_is_drawn_once_and_kept() {
 fn manifest(channel: &str, version: &str, url: &str) -> String {
     serde_json::json!({
         "schema": 1,
-        "app": "spaceman",
+        "app": "zendows",
         "artifact": "desktop",
         "channel": channel,
         "sequence": 2,
@@ -129,7 +129,7 @@ fn install(version: &str, sha256: Option<char>) -> Install {
 
 #[test]
 fn the_running_build_is_known_by_its_receipt_else_its_version() {
-    let files = format!("/release/spaceman/files/{}/Spaceman.zip", "c".repeat(64));
+    let files = format!("/release/zendows/files/{}/Zendows.zip", "c".repeat(64));
     let stable = manifest("stable", "0.3.2", &files);
     let decide = |manifest: &str, install: &Install| {
         protocol::decide(APP, ARTIFACT, "stable", manifest, install)
@@ -167,30 +167,30 @@ fn the_running_build_is_known_by_its_receipt_else_its_version() {
 }
 
 #[test]
-fn downloads_only_come_from_the_release_services_spaceman_files() {
+fn downloads_only_come_from_the_release_services_zendows_files() {
     let manifest_url = format!("{ORIGIN}/{APP}/{ARTIFACT}/stable.json");
     assert_eq!(
         manifest_url,
-        "https://anoma.ly/release/spaceman/desktop/stable.json"
+        "https://example.invalid/zendows-updates/desktop/stable.json"
     );
     let allowed = |reference: &str| {
         protocol::resolve_url(&manifest_url, reference).filter(|url| url.starts_with(FILES))
     };
     assert_eq!(
-        allowed("/release/spaceman/files/abc/Spaceman.zip").as_deref(),
-        Some("https://anoma.ly/release/spaceman/files/abc/Spaceman.zip")
+        allowed("/release/zendows/files/abc/Zendows.zip").as_deref(),
+        Some("https://example.invalid/zendows-updates/files/abc/Zendows.zip")
     );
     assert_eq!(
-        allowed("../files/abc/Spaceman.zip").as_deref(),
-        Some("https://anoma.ly/release/spaceman/files/abc/Spaceman.zip")
+        allowed("../files/abc/Zendows.zip").as_deref(),
+        Some("https://example.invalid/zendows-updates/files/abc/Zendows.zip")
     );
     for refused in [
         "/release/hex/files/abc/Hex.zip",
-        "/release/spaceman/desktop/x.zip",
-        "/release/spaceman/files/../../hex/files/abc/Hex.zip",
-        "https://example.com/release/spaceman/files/abc/Spaceman.zip",
-        "https://anoma.ly.example.com/release/spaceman/files/abc/Spaceman.zip",
-        "//example.com/release/spaceman/files/abc/Spaceman.zip",
+        "/release/zendows/desktop/x.zip",
+        "/release/zendows/files/../../hex/files/abc/Hex.zip",
+        "https://example.com/release/zendows/files/abc/Zendows.zip",
+        "https://anoma.ly.example.com/release/zendows/files/abc/Zendows.zip",
+        "//example.com/release/zendows/files/abc/Zendows.zip",
     ] {
         assert_eq!(allowed(refused), None, "{refused}");
     }
@@ -204,7 +204,7 @@ fn a_stamped_build_names_its_own_channel_and_version() {
     assert_eq!(dev.version, "0.0.0-dev-12");
     assert_eq!(
         transport::user_agent(dev.channel.as_deref().unwrap_or("stable"), &dev.version),
-        "spaceman/dev/0.0.0-dev-12"
+        "zendows/dev/0.0.0-dev-12"
     );
     let stable = stamp::identity(Some("stable"), Some("0.3.3"), None, "0.3.3");
     assert_eq!(stable.channel.as_deref(), Some("stable"));
@@ -223,7 +223,7 @@ fn a_stamped_build_names_its_own_channel_and_version() {
 
 #[test]
 fn another_channel_waits_for_the_user_to_switch() {
-    let files = format!("/release/spaceman/files/{}/Spaceman.zip", "c".repeat(64));
+    let files = format!("/release/zendows/files/{}/Zendows.zip", "c".repeat(64));
     let stable = manifest("stable", "0.3.3", &files);
     let mut dev_build = install("0.0.0-dev-12", None);
     dev_build.channel = Some("dev".into());
@@ -285,7 +285,7 @@ fn another_channel_waits_for_the_user_to_switch() {
 
 #[test]
 fn a_copy_that_cant_replace_itself_offers_the_download() {
-    let files = format!("/release/spaceman/files/{}/Spaceman.zip", "c".repeat(64));
+    let files = format!("/release/zendows/files/{}/Zendows.zip", "c".repeat(64));
     let stable = manifest("stable", "0.3.3", &files);
     let decision = protocol::decide(APP, ARTIFACT, "stable", &stable, &install("0.3.2", None));
     let Plan::Download { version, target } = plan(decision, Method::DownloadOnly, None, None)
@@ -296,7 +296,7 @@ fn a_copy_that_cant_replace_itself_offers_the_download() {
     let manifest_url = format!("{ORIGIN}/{APP}/{ARTIFACT}/stable.json");
     assert_eq!(
         files_url(&manifest_url, &target).unwrap(),
-        format!("{FILES}{}/Spaceman.zip", "c".repeat(64))
+        format!("{FILES}{}/Zendows.zip", "c".repeat(64))
     );
     // A switch needs no confirmation there: nothing installs either way.
     let mut dev_build = install("0.0.0-dev-12", None);
@@ -308,7 +308,7 @@ fn a_copy_that_cant_replace_itself_offers_the_download() {
     ));
     let updater = Updater::with_phase(Phase::Available(Available::Download {
         version: "0.3.3".into(),
-        url: format!("{FILES}x/Spaceman.zip"),
+        url: format!("{FILES}x/Zendows.zip"),
     }));
     assert_eq!(
         updater.status(),
@@ -347,7 +347,7 @@ fn quitting_installs_a_ready_update_for_the_next_launch() {
     assert!(updater.install_on_quit().is_none());
     assert!(updater.shared.lock().adopt(staged("0.3.4", 'b')).is_some());
 
-    // A swap that fails leaves Spaceman as it was, and the quit goes on.
+    // A swap that fails leaves Zendows as it was, and the quit goes on.
     let updater = Updater::with_phase(Phase::Idle);
     assert_eq!(updater.shared.lock().adopt(staged("0.3.3", 'a')), None);
     let error = updater

@@ -1,8 +1,8 @@
-// Serves Spaceman's static site (dist/) under /spaceman on anoma.ly. The route also matches
-// paths like /spacemanx, which aren't ours. /spaceman redirects to /spaceman/ so the page's
+// Serves Zendows's static site (dist/) under /zendows on anoma.ly. The route also matches
+// paths like /zendowsx, which aren't ours. /zendows redirects to /zendows/ so the page's
 // relative asset URLs resolve under it.
-const BASE = "/spaceman"
-const RELEASE_SERVICE = "https://anoma.ly/release"
+const BASE = "/zendows"
+const RELEASE_SERVICE = "https://example.invalid/zendows-updates"
 
 type Env = { ASSETS: { fetch(request: Request): Promise<Response> } }
 
@@ -76,7 +76,7 @@ function secure(headers: Headers) {
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
 }
 
-// Redirects /spaceman/download/macos-arm64 to the Anomaly release service's stable alias (or dev
+// Redirects /zendows/download/macos-arm64 to the Anomaly release service's stable alias (or dev
 // until a stable release is published), and serves its live SHA-256 at .../macos-arm64.sha256.
 async function download(request: Request, rest: string): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") {
@@ -91,8 +91,8 @@ async function download(request: Request, rest: string): Promise<Response> {
   let manifest: ReleaseManifest | undefined
   if (!dev) {
     try {
-      const res = await fetch(`${RELEASE_SERVICE}/spaceman/desktop/stable.json`, {
-        headers: { "User-Agent": "spaceman-site" },
+      const res = await fetch(`${RELEASE_SERVICE}/zendows/desktop/stable.json`, {
+        headers: { "User-Agent": "zendows-site" },
         cache: "no-store",
       })
       if (res.ok) {
@@ -106,8 +106,8 @@ async function download(request: Request, rest: string): Promise<Response> {
 
   if (isSha) {
     if (!manifest) {
-      const res = await fetch(`${RELEASE_SERVICE}/spaceman/desktop/${channel}.json`, {
-        headers: { "User-Agent": "spaceman-site" },
+      const res = await fetch(`${RELEASE_SERVICE}/zendows/desktop/${channel}.json`, {
+        headers: { "User-Agent": "zendows-site" },
         cache: "no-store",
       })
       if (!res.ok) return new Response("Release checksum unavailable", { status: 502 })
@@ -120,14 +120,14 @@ async function download(request: Request, rest: string): Promise<Response> {
       "Cache-Control": "no-store",
     })
     secure(headers)
-    return new Response(request.method === "HEAD" ? null : `${sha}  Spaceman.zip\n`, {
+    return new Response(request.method === "HEAD" ? null : `${sha}  Zendows.zip\n`, {
       status: 200,
       headers,
     })
   }
 
   const headers = new Headers({
-    Location: `${RELEASE_SERVICE}/spaceman/desktop/${channel}/macos-arm64`,
+    Location: `${RELEASE_SERVICE}/zendows/desktop/${channel}/macos-arm64`,
     "Cache-Control": "no-store",
   })
   secure(headers)

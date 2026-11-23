@@ -122,7 +122,7 @@ fn anomalies_are_debounced_and_report_their_duration() {
 #[test]
 fn journal_rotates_and_reads_both_generations() {
     let directory = std::env::temp_dir().join(format!(
-        "spaceman-journal-test-{}-{}",
+        "zendows-journal-test-{}-{}",
         std::process::id(),
         unix_millis()
     ));
@@ -238,7 +238,7 @@ fn summary_reconstructs_the_arrangement_and_counts_anomalies() {
         "{summary}"
     );
     assert!(
-        summary.contains("Marked wrong by hand (spaceman ctl wrong): 58s ago"),
+        summary.contains("Marked wrong by hand (zendows ctl wrong): 58s ago"),
         "{summary}"
     );
     assert!(summary.contains("Agent starts: 1"), "{summary}");

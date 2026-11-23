@@ -1,5 +1,5 @@
 //! Activity pane: the last 24 hours of the arrangement journal (`journal.jsonl`), summarized
-//! with the same [`Summary`] as `spaceman doctor`, plus `procwatch` process vitals.
+//! with the same [`Summary`] as `zendows doctor`, plus `procwatch` process vitals.
 
 #[cfg(test)]
 mod tests;
@@ -7,7 +7,7 @@ mod tests;
 use std::time::SystemTime;
 
 use rune::{El, Tx, col, row, text};
-use spaceman::journal::{
+use zendows::journal::{
     AnomalyKind, AnomalyState, JournalEvent, JournalLine, Summary, human_age, human_duration,
     short_bundle_name,
 };
@@ -202,7 +202,7 @@ fn activity_row(line: &JournalLine, now_ms: u64) -> Option<ActivityRow> {
         ),
         JournalEvent::MarkedWrong => row(
             "Snapshot saved".into(),
-            "Recorded the full arrangement for spaceman doctor.".into(),
+            "Recorded the full arrangement for zendows doctor.".into(),
             Tone::Normal,
         ),
         JournalEvent::Diff { .. }
@@ -237,14 +237,14 @@ impl ActivityPane {
     fn reload(&mut self) {
         self.loaded = true;
         self.stamp = journal_stamp();
-        let Some((live, rotated)) = spaceman::journal::default_paths() else {
+        let Some((live, rotated)) = zendows::journal::default_paths() else {
             self.error = Some("HOME is unavailable".into());
             return;
         };
-        match spaceman::journal::read(&[&rotated, &live]) {
+        match zendows::journal::read(&[&rotated, &live]) {
             Ok((lines, skipped)) => {
                 self.error = None;
-                let now_ms = spaceman::journal::unix_millis();
+                let now_ms = zendows::journal::unix_millis();
                 self.report = DoctorReport::from_lines(&lines, now_ms, skipped);
             }
             Err(error) => {
@@ -274,7 +274,7 @@ impl ActivityPane {
                 event: JournalEvent::Recall {
                     bundle_id: "com.apple.Safari".into(),
                     window: 101,
-                    workspace: spaceman::WorkspaceId::ONE,
+                    workspace: zendows::WorkspaceId::ONE,
                     floating: false,
                 },
             },
@@ -283,7 +283,7 @@ impl ActivityPane {
                 event: JournalEvent::Recall {
                     bundle_id: "com.apple.MobileSMS".into(),
                     window: 108,
-                    workspace: spaceman::WorkspaceId::TWO,
+                    workspace: zendows::WorkspaceId::TWO,
                     floating: false,
                 },
             },
@@ -472,7 +472,7 @@ pub fn pane(ui: &Ui, p: Paint) -> El {
         journal_rows,
     ));
 
-    let journal_path = spaceman::journal::default_paths().map_or_else(
+    let journal_path = zendows::journal::default_paths().map_or_else(
         || "journal.jsonl".into(),
         |(live, _)| controls::home_relative(&live),
     );
@@ -487,7 +487,7 @@ pub fn pane(ui: &Ui, p: Paint) -> El {
             "Show in Finder",
             ButtonKind::Secondary,
             |_: &mut Ui, _: &mut Tx| {
-                if let Some((live, _)) = spaceman::journal::default_paths() {
+                if let Some((live, _)) = zendows::journal::default_paths() {
                     controls::reveal_in_finder(&live);
                 }
             },
@@ -495,7 +495,7 @@ pub fn pane(ui: &Ui, p: Paint) -> El {
     )];
     if ui.agent.as_ref().is_some_and(|agent| agent.automatic) {
         let snapshot_desc = report.last_snapshot.as_ref().map_or_else(
-            || "Records the current arrangement for spaceman doctor.".to_owned(),
+            || "Records the current arrangement for zendows doctor.".to_owned(),
             |age| format!("Last saved {age}"),
         );
         diagnostics.push(controls::setting_row(
@@ -526,7 +526,7 @@ pub fn pane(ui: &Ui, p: Paint) -> El {
 }
 
 fn journal_stamp() -> Option<(Option<SystemTime>, u64)> {
-    let (live, _) = spaceman::journal::default_paths()?;
+    let (live, _) = zendows::journal::default_paths()?;
     let metadata = std::fs::metadata(live).ok()?;
     Some((metadata.modified().ok(), metadata.len()))
 }
@@ -547,7 +547,7 @@ const fn plural(count: usize) -> &'static str {
 fn human_restore_reason(reason: &str) -> String {
     match reason {
         "pause" => "Paused automatic tiling".into(),
-        "restore all" => "Paused or quitting Spaceman".into(),
+        "restore all" => "Paused or quitting Zendows".into(),
         "startup without saved workspaces" => "Startup recovery without saved workspaces".into(),
         other => other.into(),
     }

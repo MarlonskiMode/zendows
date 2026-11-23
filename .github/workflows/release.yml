@@ -1,8 +1,8 @@
 name: Release
 
-# Builds, signs, notarizes and publishes Spaceman for Apple silicon from one
+# Builds, signs, notarizes and publishes Zendows for Apple silicon from one
 # exact commit of dev to Anomaly's release service
-# (https://anoma.ly/release/spaceman), split the way Hex's release is:
+# (https://example.invalid/zendows-updates), split the way Hex's release is:
 #
 # - build-macos, verify-macos and homebrew-stage run repository code (cargo,
 #   actool, the app's CLI, brew). They have no environment, no secrets and no
@@ -11,7 +11,7 @@ name: Release
 #   environment. They check out only .github/release/ and run only those
 #   scripts and SHA-pinned actions, on artifacts they treat as data. Apple
 #   credentials and the Homebrew tap deploy key come from AWS Secrets Manager
-#   (role/github/spaceman-release) through GitHub OIDC and live only in the
+#   (role/github/zendows-release) through GitHub OIDC and live only in the
 #   one step that reads them (.github/release/with-secrets.sh).
 # - every artifact carries a SHA256SUMS whose digest the job that made it
 #   reports; every job that downloads it checks that digest.
@@ -27,29 +27,28 @@ name: Release
 #   publishes nothing, and pushes and deletes a throwaway v0.0.0-test-<run>
 #   tag to prove the run can tag.
 # - stable: a dispatch from dev publishes Cargo.toml's version on the stable
-#   channel, updates Homebrew (anomalyco/tap/spaceman), and tags v<version>.
+#   channel, updates Homebrew (MarlonskiMode/homebrew-tap/zendows), and tags v<version>.
 #   Tags trigger nothing.
 #
 # The release service authorizes the publish job by its OIDC token:
-# anomalyco/spaceman, this file, refs/heads/dev, environment release
-# (anomalyco/release registry/spaceman.json).
+# MarlonskiMode/zendows, this file, refs/heads/dev, environment release
+# (anomalyco/release registry/zendows.json).
 #
 # Sparkle in installed builds still reads the R2 appcast: after a stable run,
 # scripts/release-app.sh on the release Mac downloads this run's zip from the
 # release service, signs it into the appcast and publishes both to R2
 # (docs/releasing.md).
+# Zendows fork: Anomaly's signing secrets, OIDC role, team ID (5NZ4Q7NXJ4), and
+# release service are not available and must not be reused. Keep this workflow
+# for reference only until a private Apple Developer ID + release host exist.
 on:
   workflow_dispatch:
     inputs:
       channel:
-        description: Run from dev. check (build, sign and verify), dev (dev channel) or stable (public release).
+        description: Disabled in Zendows fork until signing/release host are configured.
         type: choice
         options: [check, dev, stable]
         default: check
-  push:
-    branches: [dev]
-    # Docs and the website alone cut no dev build.
-    paths-ignore: ["docs/**", "website/**", "**/*.md"]
 
 permissions:
   contents: read
@@ -65,11 +64,13 @@ defaults:
     shell: bash
 
 env:
-  SPACEMAN_TEAM_ID: 5NZ4Q7NXJ4
+  # Placeholder — replace with the fork maintainer's Apple team ID before enabling.
+  ZENDOWS_TEAM_ID: YOURTEAMID
 
 jobs:
   plan:
-    if: github.ref == 'refs/heads/dev'
+    # Disabled: would otherwise publish using Anomaly-oriented .github/release scripts.
+    if: false
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.plan.outputs.version }}
@@ -99,7 +100,7 @@ jobs:
 
   # ---- Build: repository code; no environment, secrets or id-token ----------
 
-  # Spaceman.app, unsigned; sign-macos signs it with the Developer ID. Xcode 26
+  # Zendows.app, unsigned; sign-macos signs it with the Developer ID. Xcode 26
   # (macos-26) compiles app/AppIcon.icon.
   build-macos:
     needs: plan
@@ -115,17 +116,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           toolchain: 1.100.0
-      - name: Build Spaceman.app
+      - name: Build Zendows.app
         env:
-          SPACEMAN_RELEASE_UNSIGNED: "1"
-          SPACEMAN_RELEASE_CHANNEL: ${{ needs.plan.outputs.release-channel }}
-          SPACEMAN_RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+          ZENDOWS_RELEASE_UNSIGNED: "1"
+          ZENDOWS_RELEASE_CHANNEL: ${{ needs.plan.outputs.release-channel }}
+          ZENDOWS_RELEASE_VERSION: ${{ needs.plan.outputs.version }}
         run: |
           bundle=$(scripts/build-app.sh | tail -n 1)
-          [ "$bundle" = "$PWD/target/Spaceman.app" ] || { echo "::error::build-app.sh made $bundle."; exit 1; }
+          [ "$bundle" = "$PWD/target/Zendows.app" ] || { echo "::error::build-app.sh made $bundle."; exit 1; }
           scripts/validate-release.sh --metadata-only
           mkdir -p "$RUNNER_TEMP/macos"
-          /usr/bin/ditto -c -k --keepParent "$bundle" "$RUNNER_TEMP/macos/Spaceman.app.zip"
+          /usr/bin/ditto -c -k --keepParent "$bundle" "$RUNNER_TEMP/macos/Zendows.app.zip"
       - id: upload
         uses: ./.github/release/upload
         with:
@@ -143,8 +144,8 @@ jobs:
       contents: read
       id-token: write
     env:
-      SPACEMAN_VERSION: ${{ needs.plan.outputs.version }}
-      SPACEMAN_BUNDLE_VERSION: ${{ needs.plan.outputs.bundle-version }}
+      ZENDOWS_VERSION: ${{ needs.plan.outputs.version }}
+      ZENDOWS_BUNDLE_VERSION: ${{ needs.plan.outputs.bundle-version }}
     outputs:
       digest: ${{ steps.upload.outputs.digest }}
     steps:
@@ -175,8 +176,8 @@ jobs:
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
-          role-to-assume: arn:aws:iam::604439173067:role/github/spaceman-release
-          role-session-name: spaceman-${{ github.run_id }}
+          role-to-assume: arn:aws:iam::604439173067:role/github/zendows-release
+          role-session-name: zendows-${{ github.run_id }}
           role-duration-seconds: 900
           aws-region: us-east-1
           output-env-credentials: false
@@ -193,9 +194,9 @@ jobs:
             -- bash .github/release/macos-credentials.sh "$RUNNER_TEMP/credentials"
       - name: Sign, notarize and staple
         env:
-          SPACEMAN_NOTARY_KEY_ID: ${{ vars.APPLE_NOTARY_KEY_ID }}
-          SPACEMAN_NOTARY_ISSUER: ${{ vars.APPLE_NOTARY_ISSUER_ID }}
-        run: bash .github/release/sign-macos.sh "$RUNNER_TEMP/in/build-macos-arm64/Spaceman.app.zip" "$RUNNER_TEMP/out"
+          ZENDOWS_NOTARY_KEY_ID: ${{ vars.APPLE_NOTARY_KEY_ID }}
+          ZENDOWS_NOTARY_ISSUER: ${{ vars.APPLE_NOTARY_ISSUER_ID }}
+        run: bash .github/release/sign-macos.sh "$RUNNER_TEMP/in/build-macos-arm64/Zendows.app.zip" "$RUNNER_TEMP/out"
       - name: Remove the credentials
         if: always()
         run: |
@@ -216,7 +217,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 20
     env:
-      SPACEMAN_VERSION: ${{ needs.plan.outputs.version }}
+      ZENDOWS_VERSION: ${{ needs.plan.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -229,18 +230,18 @@ jobs:
       - name: Check the signed app
         run: |
           dir="$RUNNER_TEMP/in/sign-macos"
-          zip="Spaceman-$SPACEMAN_VERSION-macos-arm64.zip"
+          zip="Zendows-$ZENDOWS_VERSION-macos-arm64.zip"
           (cd "$dir" && shasum -a 256 -c "$zip.sha256")
           check=$(mktemp -d)
           ditto -x -k "$dir/$zip" "$check"
-          app="$check/Spaceman.app"
-          SPACEMAN_RELEASE_ARCH=arm64 scripts/validate-release.sh "$app" "$dir/$zip"
+          app="$check/Zendows.app"
+          ZENDOWS_RELEASE_ARCH=arm64 scripts/validate-release.sh "$app" "$dir/$zip"
           details=$(codesign --display --verbose=4 "$app" 2>&1)
-          grep -qx "TeamIdentifier=$SPACEMAN_TEAM_ID" <<< "$details" || { echo "::error::Not signed by team $SPACEMAN_TEAM_ID."; exit 1; }
-          codesign --verify --deep --strict -R="anchor apple generic and certificate leaf[subject.OU] = \"$SPACEMAN_TEAM_ID\" and identifier \"anomaly.spaceman\"" "$app"
+          grep -qx "TeamIdentifier=$ZENDOWS_TEAM_ID" <<< "$details" || { echo "::error::Not signed by team $ZENDOWS_TEAM_ID."; exit 1; }
+          codesign --verify --deep --strict -R="anchor apple generic and certificate leaf[subject.OU] = \"$ZENDOWS_TEAM_ID\" and identifier \"com.marlonskimode.zendows\"" "$app"
           spctl --assess --type execute --verbose=2 "$app" 2>&1 | tee "$check/spctl.txt"
           grep -q 'source=Notarized Developer ID' "$check/spctl.txt" || { echo "::error::Gatekeeper does not see a notarized Developer ID app."; exit 1; }
-          "$app/Contents/MacOS/spaceman" config-check config.example.toml
+          "$app/Contents/MacOS/zendows" config-check config.example.toml
           codesign -dv "$app" 2>&1 | grep -E '^(Identifier|TeamIdentifier|Authority=Developer)' >> "$GITHUB_STEP_SUMMARY"
 
   # ---- Publish: release environment; only .github/release/ is checked out ----
@@ -258,8 +259,8 @@ jobs:
       id-token: write
     env: &publish-env
       RELEASE: ${{ needs.plan.outputs.service }}
-      SPACEMAN_VERSION: ${{ needs.plan.outputs.version }}
-      SPACEMAN_RELEASE_CHANNEL: ${{ needs.plan.outputs.release-channel }}
+      ZENDOWS_VERSION: ${{ needs.plan.outputs.version }}
+      ZENDOWS_RELEASE_CHANNEL: ${{ needs.plan.outputs.release-channel }}
     steps:
       - *checkout-release
       - uses: ./.github/release/download
@@ -289,7 +290,7 @@ jobs:
       contents: write
     env:
       SHA: ${{ github.sha }}
-      SPACEMAN_RELEASE_TAG: ${{ needs.plan.outputs.tag }}
+      ZENDOWS_RELEASE_TAG: ${{ needs.plan.outputs.tag }}
     steps:
       # Credentials stay so the job can push the tag; it runs no repository
       # code beyond .github/release/.
@@ -300,7 +301,7 @@ jobs:
           sparse-checkout-cone-mode: false
       - name: Tag
         env:
-          SPACEMAN_RELEASE_TAG_TEST: ${{ needs.plan.outputs.channel == 'check' && '1' || '' }}
+          ZENDOWS_RELEASE_TAG_TEST: ${{ needs.plan.outputs.channel == 'check' && '1' || '' }}
         run: bash .github/release/tag-release.sh
 
   # Renders the cask from the published zip and checks it with brew, without
@@ -313,7 +314,7 @@ jobs:
     timeout-minutes: 20
     env:
       RELEASE: ${{ needs.plan.outputs.service }}
-      SPACEMAN_VERSION: ${{ needs.plan.outputs.version }}
+      ZENDOWS_VERSION: ${{ needs.plan.outputs.version }}
       RELEASE_CHANNEL: ${{ needs.plan.outputs.release-channel }}
     outputs:
       digest: ${{ steps.upload.outputs.digest }}
@@ -324,35 +325,35 @@ jobs:
           persist-credentials: false
       - name: Render the cask from the published zip
         run: |
-          curl -fsS "$RELEASE/spaceman/desktop/$RELEASE_CHANNEL.json" -o "$RUNNER_TEMP/manifest.json"
+          curl -fsS "$RELEASE/zendows/desktop/$RELEASE_CHANNEL.json" -o "$RUNNER_TEMP/manifest.json"
           version=$(jq -er .release.version "$RUNNER_TEMP/manifest.json")
-          test "$version" = "$SPACEMAN_VERSION"
+          test "$version" = "$ZENDOWS_VERSION"
           zip=$(jq -ec '.release.targets["macos-arm64"]' "$RUNNER_TEMP/manifest.json") || {
-            echo "::error::Spaceman $version has no macos-arm64 build."
+            echo "::error::Zendows $version has no macos-arm64 build."
             exit 1
           }
           url="${RELEASE%/release}$(printf '%s' "$zip" | jq -r .url)"
           sha256=$(printf '%s' "$zip" | jq -r .sha256)
           mkdir -p "$RUNNER_TEMP/cask"
-          scripts/release-homebrew.sh render "$version" "$url" "$sha256" "$RUNNER_TEMP/cask/spaceman.rb"
-          { echo '### Casks/spaceman.rb'; echo '```ruby'; cat "$RUNNER_TEMP/cask/spaceman.rb"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          scripts/release-homebrew.sh render "$version" "$url" "$sha256" "$RUNNER_TEMP/cask/zendows.rb"
+          { echo '### Casks/zendows.rb'; echo '```ruby'; cat "$RUNNER_TEMP/cask/zendows.rb"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Check it with brew
         env:
           HOMEBREW_NO_AUTO_UPDATE: "1"
           HOMEBREW_NO_INSTALL_FROM_API: "1"
         run: |
           brew tap anomalyco/tap
-          cp "$RUNNER_TEMP/cask/spaceman.rb" "$(brew --repo anomalyco/tap)/Casks/spaceman.rb"
+          cp "$RUNNER_TEMP/cask/zendows.rb" "$(brew --repo anomalyco/tap)/Casks/zendows.rb"
           # Homebrew 6 refuses to load casks from third-party taps until they
           # are trusted; this runner trusts our own tap. Older Homebrew has no
           # `brew trust` and no such check.
           if brew trust --help > /dev/null 2>&1; then brew trust anomalyco/tap; fi
-          brew style --cask anomalyco/tap/spaceman
+          brew style --cask MarlonskiMode/homebrew-tap/zendows
           # Skipped audits: the zip URL names its own SHA-256 rather than the
-          # version, so a pinned sha256 is right; and the token "spaceman"
+          # version, so a pinned sha256 is right; and the token "zendows"
           # belongs to this tap's cask, not any unrelated upstream formula/cask.
           brew audit --cask --strict --online \
-            --except=sha256_no_check_if_unversioned,token_conflicts anomalyco/tap/spaceman
+            --except=sha256_no_check_if_unversioned,token_conflicts MarlonskiMode/homebrew-tap/zendows
       - id: upload
         uses: ./.github/release/upload
         with:
@@ -370,7 +371,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      SPACEMAN_VERSION: ${{ needs.plan.outputs.version }}
+      ZENDOWS_VERSION: ${{ needs.plan.outputs.version }}
     steps:
       - *checkout-release
       - uses: ./.github/release/download
@@ -382,7 +383,7 @@ jobs:
         env: *aws-env
         run: |
           bash .github/release/with-secrets.sh HOMEBREW_TAP_DEPLOY_KEY=shared/HOMEBREW_TAP_DEPLOY_KEY \
-            -- bash .github/release/push-homebrew.sh "$RUNNER_TEMP/in/build-homebrew/spaceman.rb" "$SPACEMAN_VERSION"
+            -- bash .github/release/push-homebrew.sh "$RUNNER_TEMP/in/build-homebrew/zendows.rb" "$ZENDOWS_VERSION"
 
   # Tells Homebrew installs about the version only once the tap serves it.
   record-brew:
@@ -397,4 +398,4 @@ jobs:
     env: *publish-env
     steps:
       - *checkout-release
-      - run: bash .github/release/release-service.sh distribution brew "$SPACEMAN_VERSION"
+      - run: bash .github/release/release-service.sh distribution brew "$ZENDOWS_VERSION"

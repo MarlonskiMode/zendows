@@ -252,7 +252,7 @@ fn second_confirmed_self_un_park_keeps_tiling_but_stops_parking_the_window() {
 }
 
 #[test]
-fn frontmost_window_relaunched_at_a_spaceman_parking_edge_is_recovered() {
+fn frontmost_window_relaunched_at_a_zendows_parking_edge_is_recovered() {
     let stranded = window(10);
     let outputs = outputs();
     let display = outputs.main().frame;

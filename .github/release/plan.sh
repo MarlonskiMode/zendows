@@ -14,7 +14,7 @@
 #          v<version> only after it published.
 #
 # The manifest's version is display text: installs follow the channel and never
-# compare versions. Spaceman.app itself always carries Cargo.toml's version
+# compare versions. Zendows.app itself always carries Cargo.toml's version
 # (app/Info.plist), which sign-macos.sh checks as bundle-version.
 #
 # A run releases the commit it runs on: SHA (the checked-out commit) must be
@@ -42,7 +42,7 @@ case "$CHANNEL" in
     version=$crate
     tag="v$version"
     refs=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$tag" --jq '.[].ref')
-    if grep -Fxq "refs/tags/$tag" <<< "$refs"; then die "Spaceman $version is already tagged $tag; bump Cargo.toml and app/Info.plist."; fi
+    if grep -Fxq "refs/tags/$tag" <<< "$refs"; then die "Zendows $version is already tagged $tag; bump Cargo.toml and app/Info.plist."; fi
     [ -s "changelog/$version.md" ] || die "Add release notes at changelog/$version.md first."
     release_channel=stable
     ;;
@@ -63,4 +63,4 @@ esac
   echo "tag=$tag"
   echo "notes-url=$notes"
 } >> "$GITHUB_OUTPUT"
-echo "Releasing Spaceman $version ($CHANNEL, bundle $crate) from $SHA." >> "$GITHUB_STEP_SUMMARY"
+echo "Releasing Zendows $version ($CHANNEL, bundle $crate) from $SHA." >> "$GITHUB_STEP_SUMMARY"

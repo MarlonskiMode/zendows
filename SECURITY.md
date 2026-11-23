@@ -2,7 +2,8 @@
 
 ## Project Status
 
-Spaceman is an experimental public preview without a guaranteed security maintenance window.
+Zendows is an experimental personal fork of [Spaceman](https://github.com/anomalyco/spaceman)
+without a guaranteed security maintenance window. It is not the official Spaceman product.
 
 ## Reporting A Vulnerability
 
@@ -17,10 +18,15 @@ needed to explain the issue, and the contents of `parked-windows.json` or `works
 The maintainer will acknowledge the report, assess scope, and coordinate disclosure when practical.
 No response-time guarantee applies while the project remains experimental.
 
+For vulnerabilities that also affect upstream Spaceman, consider reporting to
+[anomalyco/spaceman](https://github.com/anomalyco/spaceman) as well.
+
 ## Scope Notes
 
-Spaceman has broad Accessibility permission and uses private `_AXUIElementGetWindow`. The local
-control socket and lock are mode `0600`. There is no telemetry; release builds check Anomaly's release service
-(`anoma.ly/release/spaceman`) for updates and install only archives whose SHA-256 and Developer ID
-signature check out. See
-[Security and privacy](docs/security-and-privacy.md) for the current data model.
+Zendows has broad Accessibility permission and uses private `_AXUIElementGetWindow`. The local
+control socket and lock are mode `0600`. There is no telemetry.
+
+**Updates:** this fork disables the in-app updater so it does not contact Anomaly’s release service
+(`anoma.ly/release/...`) under the Zendows brand. Sparkle feed keys were removed from
+`app/Info.plist`. Builds are unsigned unless you configure your own Developer ID. See
+[Security and privacy](docs/security-and-privacy.md) and the README signing section.

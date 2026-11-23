@@ -7,7 +7,7 @@ instantly, and send windows or whole apps to a workspace, without using macOS Sp
 
 ```ts
 Switch workspace                                           // ws.switch
-├── Option+1..0 / Option+A..Z / spaceman ctl switch <ws> / a workspace in the menu bar menu
+├── Option+1..0 / Option+A..Z / zendows ctl switch <ws> / a workspace in the menu bar menu
 ├── Incoming parked windows revealed -> laid out -> outgoing windows parked off-screen
 │   └── Reveal not confirmed by the window server in time -> switch rolled back, old workspace stays
 ├── Focus -> last-focused tile of the incoming workspace
@@ -78,7 +78,7 @@ Workspace HUD ([settings] hud, on by default)               // ws.hud
 │   ├── Hover over the capsule -> pauses auto-dismiss (and rescues a mid-exit capsule); resumes
 │   │   0.6 s after the pointer leaves
 │   ├── Click a workspace slot -> switches that display to that workspace without activating
-│   ├── Trailing Settings gear -> opens Spaceman Settings and glides the capsule out
+│   ├── Trailing Settings gear -> opens Zendows Settings and glides the capsule out
 │   └── Right-click (or Ctrl+click) an app icon -> native Float/Tile and Pin/Unpin menu writing
 │       through config.toml rules
 ├── Another switch while it's up, or on its way out -> the same capsule carries on from where it
@@ -107,8 +107,8 @@ Keyboard (while tiling is enabled)
 └── Option+Shift+Tab            -> move focused workspace to next display
 Trackpad: three-finger swipe left/right -> next/previous workspace (turn macOS's three-finger
           "Swipe between full-screen applications" off or move it to four fingers)
-CLI: spaceman ctl switch | back-and-forth | move-workspace | move | move-app
-Config: ~/Library/Application Support/Spaceman/config.toml -> [[rules]], [[workspaces]] (edits apply when the file changes; new named-workspace shortcuts register on the next app start)
+CLI: zendows ctl switch | back-and-forth | move-workspace | move | move-app
+Config: ~/Library/Application Support/Zendows/config.toml -> [[rules]], [[workspaces]] (edits apply when the file changes; new named-workspace shortcuts register on the next app start)
 Menu bar: shows the active workspace glyphs; its menu lists each display's visible workspace (checked)
           and occupied ones with their apps' icons and Option shortcut -> choose one to switch
 Mouse: drop a tile on another display -> moves it to that display's active workspace (see tiling.md)
@@ -204,7 +204,7 @@ on the same letter.
 - Unit tests model frames, not z-order or paint timing: "outgoing parked after incoming laid out"
   does not prove nothing flashes. See the stacked-window flash in
   [Fullscreen Layout](fullscreen-layout.md#gotchas).
-- Some apps (Electron, Ghostty) move their own windows back on screen; Spaceman re-parks, then after
+- Some apps (Electron, Ghostty) move their own windows back on screen; Zendows re-parks, then after
   repeated undoing honors the reappearance and re-homes the window to the visible workspace. In the
   working tree, a window that does so twice in five minutes stays tiled but is no longer hidden
   across switches (`parking_exempt`).

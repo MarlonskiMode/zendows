@@ -1,11 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // Spaceman's site at https://anoma.ly/spaceman/, on Anomaly's account. worker.ts serves dist/ under /spaceman.
-  "name": "spaceman-production-site",
+  // Zendows's site at https://github.com/MarlonskiMode/zendows/, on Anomaly's account. worker.ts serves dist/ under /zendows.
+  "name": "zendows-production-site",
   "account_id": "15d29c8639fd3733b1b5486a2acfd968",
   "main": "./worker.ts",
   "compatibility_date": "2026-08-05",
-  // /spaceman/download/* fetches the release service, another Worker on this zone.
+  // /zendows/download/* fetches the release service, another Worker on this zone.
   "compatibility_flags": ["global_fetch_strictly_public"],
   "workers_dev": false,
   "preview_urls": false,
@@ -15,7 +15,7 @@
     "run_worker_first": true
   },
   "routes": [
-    { "pattern": "anoma.ly/spaceman", "zone_name": "anoma.ly" },
-    { "pattern": "anoma.ly/spaceman/*", "zone_name": "anoma.ly" }
+    { "pattern": "github.com/MarlonskiMode/zendows", "zone_name": "anoma.ly" },
+    { "pattern": "github.com/MarlonskiMode/zendows/*", "zone_name": "anoma.ly" }
   ]
 }

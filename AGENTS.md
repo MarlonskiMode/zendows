@@ -1,16 +1,16 @@
-# Spaceman Contributor Guide
+# Zendows Contributor Guide
 
 This file is the current engineering contract. README and `docs/` describe current user behavior;
 `PLAN.md` and `docs/RESEARCH.md` are historical records.
 
 ## Working Here
 
-- Agents merge their own Spaceman PRs and redeploy (release, publish, install) without asking.
+- Agents merge their own Zendows PRs and redeploy (release, publish, install) without asking.
 - CI's macOS checks run only on dispatch and tags, so run `scripts/check` locally before merging
   and say so in the PR.
-- The installed app follows `dev`: `scripts/spaceman-updater` (LaunchAgent
-  `anomaly.spaceman.updater`, set up with `scripts/install-updater`, log in
-  `~/.local/share/spaceman/updater.log`) builds a merged `dev` once pushes stop for 3 minutes, or
+- The installed app follows `dev`: `scripts/zendows-updater` (LaunchAgent
+  `com.marlonskimode.zendows.updater`, set up with `scripts/install-updater`, log in
+  `~/.local/share/zendows/updater.log`) builds a merged `dev` once pushes stop for 3 minutes, or
   after 10 at most, and installs it when the keyboard and mouse have been idle for 2 minutes. You
   don't need to install by hand after a merge.
 - Dev loop: `scripts/dev` rebuilds and reinstalls on every save; restart restores every window and
@@ -18,14 +18,14 @@ This file is the current engineering contract. README and `docs/` describe curre
 - Release notes are one file per version in `changelog/<version>.md` (frontmatter `date` and
   `summary`, then `## Major`, `## Improvements`, and `## Fixes`).
   The Release workflow (`.github/workflows/release.yml`, on `dev`) builds, signs with Anomaly's
-  Developer ID, notarizes and publishes to `https://anoma.ly/release/spaceman` (dev channel on every
+  Developer ID, notarizes and publishes to `https://example.invalid/zendows-updates` (dev channel on every
   push, stable on dispatch); `.github/` changes require CODEOWNERS review; then
   installed builds update themselves from it (`src/updater.rs`). Until every install has a build
   with that updater, `scripts/release-app.sh` on the release Mac (which holds the Sparkle key and
   `wrangler` auth) still puts each stable zip into the R2 appcast that older (Sparkle) builds read.
   See [docs/releasing.md](docs/releasing.md).
-- Bundle ID is `anomaly.spaceman` (was `com.kitlangton.spaceman` through 0.3.0). State and config
-  paths (`~/Library/Application Support/Spaceman`, `~/.config/spaceman`) don't depend on it.
+- Bundle ID is `com.marlonskimode.zendows` (was `com.kitlangton.spaceman` through 0.3.0). State and config
+  paths (`~/Library/Application Support/Zendows`, `~/.config/zendows`) don't depend on it.
 - Code shape: keep Rust files under 800 non-test lines (1,500 hard cap, 1,000 for test files;
   `scripts/file-size.sh`) and move prefix families (`x.rs` + 2+ `x_*.rs`, or 3+ `x_*.rs`) into `x/`
   (`scripts/folder-shape.sh`).
@@ -33,7 +33,7 @@ This file is the current engineering contract. README and `docs/` describe curre
 ## Architecture Map
 
 - `agent/`, `src/app.rs`, `src/app/app_loop.rs`, `src/app/app_loop/`, `src/app/worker.rs`,
-  `src/app/bridge.rs`: single-process Rune host (`spaceman-agent`), owner-only capped logging, 25 ms
+  `src/app/bridge.rs`: single-process Rune host (`zendows-agent`), owner-only capped logging, 25 ms
   `NSTimer` foreground pump, action queue, status, restore-before-exit coordination, in-process
   Settings window (`General`, `Rules`, `Workspaces`, `Shortcuts`, `Activity`), first-run onboarding
   tour (`agent/src/onboarding.rs`), non-activating Workspace HUD overlay (`agent/src/hud.rs`),
@@ -45,7 +45,7 @@ This file is the current engineering contract. README and `docs/` describe curre
   in `src/app/tests.rs` and `src/app/tests/`.
 - `src/window_memory.rs`, `src/app/memory.rs`: advisory, title-free per-bundle placement memory and
   relaunch recall. `src/journal.rs`, `src/journal/doctor.rs`, `src/app/journal.rs`: bounded
-  arrangement/anomaly journal and the `spaceman doctor` summary.
+  arrangement/anomaly journal and the `zendows doctor` summary.
 - `src/app/input.rs`: bounded ordered user input and geometry-based gesture tracking, independent
   of preview-worker availability. Main-thread pointer sampling must not make synchronous AX calls.
 - `src/status_item.rs`, `src/login_item.rs`, `src/termination.rs`: main-thread
@@ -134,9 +134,9 @@ This file is the current engineering contract. README and `docs/` describe curre
   scoped live tests.
 - Read live harnesses before running them. Confirm expected displays, preserve baseline workspace and
   focus, and verify cleanup. Never experiment on unrelated user windows.
-- Live harness state must use the internal `SPACEMAN_APPLICATION_SUPPORT` override and must never read
+- Live harness state must use the internal `ZENDOWS_APPLICATION_SUPPORT` override and must never read
   or mutate the user's normal workspace or parked-window state.
-- Preserve `~/Library/Application Support/Spaceman/parked-windows.json` until pause/quit restoration is
+- Preserve `~/Library/Application Support/Zendows/parked-windows.json` until pause/quit restoration is
   confirmed. If a test crashes, reopen the same app and recover before cleaning state.
 
 ## Verification

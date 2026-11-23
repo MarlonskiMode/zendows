@@ -1,4 +1,4 @@
-// Spaceman's download page at anoma.ly/spaceman, as he sees it in Safari on "a small program called Spaceman":
+// Zendows's download page at github.com/MarlonskiMode/zendows, as he sees it in Safari on "a small program called Zendows":
 // the end card's dark page in miniature (icon, name, tagline, Download), and the toolbar's
 // download indicator after he clicks it.
 import { FONT, iconCanvas, roundRect } from "./apps.js"
@@ -45,10 +45,10 @@ export function sitePage(ctx, w, h, top, d) {
   ctx.shadowColor = "rgba(0,0,0,.7)"
   ctx.shadowBlur = 18 * k
   ctx.shadowOffsetY = 8 * k
-  ctx.drawImage(iconCanvas("spaceman", G.icon * 3), cx - G.icon / 2, y, G.icon, G.icon)
+  ctx.drawImage(iconCanvas("zendows", G.icon * 3), cx - G.icon / 2, y, G.icon, G.icon)
   ctx.restore()
   y += G.icon + 22 * k + 26 * k
-  label(ctx, "Spaceman", cx, y, 30 * k, 600, "#f5f5f7")
+  label(ctx, "Zendows", cx, y, 30 * k, 600, "#f5f5f7")
   y += 12 * k + 15 * k
   label(ctx, "For your windows.", cx, y, 14.5 * k, 400, "#8e8e93")
   // Download for macOS, pressed in a little on the click

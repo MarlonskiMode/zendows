@@ -27,7 +27,7 @@ use rune::{
     Align, Cx, DisplayTarget, El, KeyPolicy, NativeDisplayId, OverlayHandle, OverlayInput,
     OverlayOptions, OverlaySpec, ScreenEdge, Tx, row,
 };
-use spaceman::{
+use zendows::{
     WorkspaceId,
     app::{UiHudDisplay, UiHudEvent},
     config::HudStyle,
@@ -62,10 +62,10 @@ const OVERLAY_SIZE: (f32, f32) = (860.0, pill::PILL_HEIGHT + 2.0 * pill::SHADOW_
 const OVERLAY_MARGIN: f32 = 60.0 - pill::SHADOW_REACH;
 /// One panel per display, up to this many displays.
 const PANEL_NAMES: [&str; 4] = [
-    "Spaceman HUD",
-    "Spaceman HUD 2",
-    "Spaceman HUD 3",
-    "Spaceman HUD 4",
+    "Zendows HUD",
+    "Zendows HUD 2",
+    "Zendows HUD 3",
+    "Zendows HUD 4",
 ];
 
 pub(super) struct HudOverlay {
@@ -112,7 +112,7 @@ impl HudOverlay {
         if let Some(clock) = &self.virtual_clock {
             return clock.load(std::sync::atomic::Ordering::Relaxed);
         }
-        spaceman::journal::unix_millis()
+        zendows::journal::unix_millis()
     }
 
     fn schedule_wake(&self, now_ms: u64, tx: &mut Tx) {
@@ -358,7 +358,7 @@ impl HudDriver {
         self.each(move |overlay, tx| {
             let left = overlay
                 .flow
-                .set_enabled(enabled, spaceman::journal::unix_millis());
+                .set_enabled(enabled, zendows::journal::unix_millis());
             if left {
                 tx.wake_after(Duration::from_millis(LEAVE_MS));
             }
@@ -457,7 +457,7 @@ const fn native(id: u32) -> DisplayTarget {
 
 #[cfg(target_os = "macos")]
 fn display_ids() -> std::collections::HashMap<String, u32> {
-    spaceman::macos::display_ids()
+    zendows::macos::display_ids()
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -476,7 +476,7 @@ fn reduce_motion() -> bool {
 }
 
 fn overlay_poll(overlay: &mut HudOverlay, _clock: f64, tx: &mut Tx) -> bool {
-    let now_ms = spaceman::journal::unix_millis();
+    let now_ms = zendows::journal::unix_millis();
     if overlay.flow.is_up()
         && let Some(display) = overlay.display
         && !display_ids().values().any(|id| *id == display)

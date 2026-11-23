@@ -1,6 +1,6 @@
 # Compatibility
 
-Spaceman is macOS-only. The app plist declares macOS 14.0 as its minimum, but the declared minimum,
+Zendows is macOS-only. The app plist declares macOS 14.0 as its minimum, but the declared minimum,
 newer macOS releases, and supported CPU architectures have not yet been validated on clean machines.
 Treat compatibility as experimental rather than guaranteed.
 
@@ -23,7 +23,7 @@ Accessibility grants live in **System Settings > Privacy & Security**. The list 
 app tile in that list, so the setup guide asks for a click on the Privacy & Security notification or
 the list's `+` button instead.
 
-Spaceman observes Accessibility elements with role `AXWindow` and subrole `AXStandardWindow` that are
+Zendows observes Accessibility elements with role `AXWindow` and subrole `AXStandardWindow` that are
 on screen, not minimized, not in native fullscreen, centered on an attached display, and expose a
 settable position. Standard windows with an enabled fullscreen button (or borderless regular-app
 windows without close/fullscreen buttons, such as Ghostty with `window-decoration = false`) and a
@@ -43,19 +43,19 @@ off screen with its recovery frame intact. If an application undoes several re-p
 reappearance is honored after all and the window is re-homed. A window whose reappearance is honored
 twice within five minutes becomes parking-exempt for the rest of the session: it remains owned and
 tiled on its workspace, but is left visible when another workspace is active rather than being fought
-indefinitely. Parking-exempt windows appear in the `parking_exempt` list of `spaceman ctl debug`; an
+indefinitely. Parking-exempt windows appear in the `parking_exempt` list of `zendows ctl debug`; an
 `ignore` config rule instead opts an application out of management permanently. If a newly identified
-frontmost window appears at the exact one-pixel-edge position produced by Spaceman parking, it is
+frontmost window appears at the exact one-pixel-edge position produced by Zendows parking, it is
 revealed so normal workspace adoption can recover an app that relaunched with stale saved bounds.
 Other windows an application keeps off screen itself are left alone rather than parked, and never
 recorded as recovery frames.
 
 Apps run as a bare executable rather than opened as an `.app` (for example a development build
-started from a terminal) have no LaunchServices launch date; Spaceman tells their process
+started from a terminal) have no LaunchServices launch date; Zendows tells their process
 incarnations apart by kernel process start time instead and manages their windows like any other.
 
 Ghostty native tabs are the primary stable-logical-window target. Replacement is conservative: when
-the evidence is ambiguous, Spaceman preserves existing logical state rather than guessing. Other apps
+the evidence is ambiguous, Zendows preserves existing logical state rather than guessing. Other apps
 with physical-window identity churn are not implicitly guaranteed to behave like Ghostty.
 
 Unresolved Ghostty slots still count toward application workspace affinity, and pending replacement
@@ -75,5 +75,5 @@ display. Empty gaps between
 staggered displays are not treated as a window reappearing on screen. Native clamping and application
 behavior still require live qualification on a particular display arrangement.
 
-Spaceman uses the private `_AXUIElementGetWindow` symbol. It requires no SIP change, but an OS update
+Zendows uses the private `_AXUIElementGetWindow` symbol. It requires no SIP change, but an OS update
 could remove or alter that symbol. Mac App Store distribution is not supported.

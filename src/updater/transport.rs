@@ -2,7 +2,7 @@
 //! and trusted roots, with no redirects: the polled manifest, revalidated with
 //! `If-None-Match`, and resumable downloads into a `.partial` file that a later
 //! attempt continues with `Range`. Requests carry nothing about the install
-//! beyond `User-Agent: spaceman/<channel>/<version>`. A download is checked
+//! beyond `User-Agent: zendows/<channel>/<version>`. A download is checked
 //! against the manifest's size and SHA-256 before any byte is used.
 
 use std::fs::{self, File, OpenOptions};
@@ -25,7 +25,7 @@ const DOWNLOAD_ATTEMPTS: u32 = 3;
 
 /// What every request names itself to the release service.
 pub(super) fn user_agent(channel: &str, version: &str) -> String {
-    format!("spaceman/{channel}/{version}")
+    format!("zendows/{channel}/{version}")
 }
 
 fn agent(timeout: Duration) -> ureq::Agent {
@@ -350,7 +350,7 @@ mod tests {
 
     fn temporary(name: &str) -> PathBuf {
         let path =
-            std::env::temp_dir().join(format!("spaceman-update-{name}-{}", std::process::id()));
+            std::env::temp_dir().join(format!("zendows-update-{name}-{}", std::process::id()));
         drop(fs::remove_dir_all(&path));
         fs::create_dir_all(&path).unwrap();
         path
@@ -358,8 +358,8 @@ mod tests {
 
     #[test]
     fn requests_name_the_app_channel_and_version() {
-        assert_eq!(user_agent("dev", "0.0.0-dev-8"), "spaceman/dev/0.0.0-dev-8");
-        assert_eq!(user_agent("stable", "0.3.2"), "spaceman/stable/0.3.2");
+        assert_eq!(user_agent("dev", "0.0.0-dev-8"), "zendows/dev/0.0.0-dev-8");
+        assert_eq!(user_agent("stable", "0.3.2"), "zendows/stable/0.3.2");
     }
 
     #[test]
@@ -392,15 +392,15 @@ mod tests {
         fs::write(&source, b"bytes").unwrap();
         let sha256 = sha256_hex(&source).unwrap();
         let target = Target {
-            url: format!("files/{sha256}/Spaceman.zip"),
+            url: format!("files/{sha256}/Zendows.zip"),
             size: 5,
             sha256: sha256.clone(),
         };
         fs::create_dir_all(directory.join(&sha256)).unwrap();
-        fs::copy(&source, directory.join(&sha256).join("Spaceman.zip")).unwrap();
+        fs::copy(&source, directory.join(&sha256).join("Zendows.zip")).unwrap();
         let file = download(
-            "https://invalid.invalid/Spaceman.zip",
-            "spaceman/dev/0.0.0-dev-1",
+            "https://invalid.invalid/Zendows.zip",
+            "zendows/dev/0.0.0-dev-1",
             &target,
             &directory,
         )
@@ -410,12 +410,12 @@ mod tests {
         fs::remove_file(&file).unwrap();
         fs::copy(
             &source,
-            directory.join(&sha256).join("Spaceman.zip.partial"),
+            directory.join(&sha256).join("Zendows.zip.partial"),
         )
         .unwrap();
         let file = download(
-            "https://invalid.invalid/Spaceman.zip",
-            "spaceman/dev/0.0.0-dev-1",
+            "https://invalid.invalid/Zendows.zip",
+            "zendows/dev/0.0.0-dev-1",
             &target,
             &directory,
         )
@@ -427,7 +427,7 @@ mod tests {
         assert!(!directory.join(&sha256).exists());
         assert!(!valid_file_name("../x"));
         assert!(!valid_file_name(".hidden"));
-        assert!(valid_file_name("Spaceman.zip"));
+        assert!(valid_file_name("Zendows.zip"));
         drop(fs::remove_dir_all(directory));
     }
 
@@ -440,8 +440,8 @@ mod tests {
 
     #[test]
     fn manifest_polls_revalidate_the_cached_etag() {
-        let url = "https://anoma.ly/release/spaceman/desktop/dev.json";
-        let ua = "spaceman/dev/0.0.0-dev-8";
+        let url = "https://example.invalid/zendows-updates/desktop/dev.json";
+        let ua = "zendows/dev/0.0.0-dev-8";
         let first = manifest_request(url, ua, None).unwrap();
         assert_eq!(header(&first, "If-None-Match"), None);
         assert_eq!(header(&first, "User-Agent"), Some(ua));
@@ -486,7 +486,7 @@ mod tests {
             })
             .unwrap();
         // Another channel's manifest starts over.
-        let stable = "https://anoma.ly/release/spaceman/desktop/stable.json";
+        let stable = "https://example.invalid/zendows-updates/desktop/stable.json";
         let error = cache
             .revalidate(stable, |etag| {
                 assert_eq!(etag, None);
@@ -500,8 +500,8 @@ mod tests {
 
     #[test]
     fn resumed_downloads_ask_for_the_rest_and_append_partial_content() {
-        let url = "https://anoma.ly/release/spaceman/files/x/Spaceman.zip";
-        let ua = "spaceman/dev/0.0.0-dev-8";
+        let url = "https://example.invalid/zendows-updates/files/x/Zendows.zip";
+        let ua = "zendows/dev/0.0.0-dev-8";
         assert_eq!(
             header(&download_request(url, ua, 0).unwrap(), "Range"),
             None
@@ -512,7 +512,7 @@ mod tests {
         );
 
         let directory = temporary("resume");
-        let partial = directory.join("Spaceman.zip.partial");
+        let partial = directory.join("Zendows.zip.partial");
         fs::write(&partial, b"abcd").unwrap();
         write_piece(206, Some("bytes 4-7/8"), &b"efgh"[..], &partial, 4, 8).unwrap();
         assert_eq!(fs::read(&partial).unwrap(), b"abcdefgh");
@@ -541,24 +541,24 @@ mod tests {
     fn an_interrupted_download_keeps_its_partial_file() {
         let directory = temporary("interrupted");
         let target = Target {
-            url: "files/x/Spaceman.zip".into(),
+            url: "files/x/Zendows.zip".into(),
             size: 8,
             sha256: "a".repeat(64),
         };
         let folder = directory.join(&target.sha256);
         fs::create_dir_all(&folder).unwrap();
-        fs::write(folder.join("Spaceman.zip.partial"), b"abcd").unwrap();
+        fs::write(folder.join("Zendows.zip.partial"), b"abcd").unwrap();
         // Nothing listens on port 1: every attempt fails before a byte arrives.
         let error = download(
-            "https://127.0.0.1:1/Spaceman.zip",
-            "spaceman/dev/0.0.0-dev-8",
+            "https://127.0.0.1:1/Zendows.zip",
+            "zendows/dev/0.0.0-dev-8",
             &target,
             &directory,
         )
         .unwrap_err();
         assert!(error.contains("couldn't reach"), "{error}");
         assert_eq!(
-            fs::read(folder.join("Spaceman.zip.partial")).unwrap(),
+            fs::read(folder.join("Zendows.zip.partial")).unwrap(),
             b"abcd"
         );
         drop(fs::remove_dir_all(directory));

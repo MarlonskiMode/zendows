@@ -1,6 +1,6 @@
 //! What this build is to the release service: the channel and version the
 //! Release workflow published it as, stamped at build time
-//! (`SPACEMAN_RELEASE_CHANNEL`, `SPACEMAN_RELEASE_VERSION`, passed through
+//! (`ZENDOWS_RELEASE_CHANNEL`, `ZENDOWS_RELEASE_VERSION`, passed through
 //! `scripts/build-app.sh`). The stamp is compiled in rather than written to
 //! `Info.plist`, because the bundle's `Info.plist` must stay byte-identical to
 //! `app/Info.plist` and carry Cargo's version (`scripts/validate-release.sh`,
@@ -9,8 +9,8 @@
 
 use super::protocol::is_version_name;
 
-const CHANNEL: Option<&str> = option_env!("SPACEMAN_RELEASE_CHANNEL");
-const VERSION: Option<&str> = option_env!("SPACEMAN_RELEASE_VERSION");
+const CHANNEL: Option<&str> = option_env!("ZENDOWS_RELEASE_CHANNEL");
+const VERSION: Option<&str> = option_env!("ZENDOWS_RELEASE_VERSION");
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct Identity {

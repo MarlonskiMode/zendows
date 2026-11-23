@@ -3,7 +3,7 @@
 //! groups sit calmly dimmed.
 
 use rune::{Cursor, El, Spring, TextStyle, Tx, el, row, text};
-use spaceman::{WorkspaceId, app::UiHudWorkspace};
+use zendows::{WorkspaceId, app::UiHudWorkspace};
 
 use super::pill::{INNER, Icons, Track, app_icon, presence, rgba, srgb};
 use crate::controls::Paint;

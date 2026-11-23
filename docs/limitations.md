@@ -1,6 +1,6 @@
 # Known Limitations
 
-Spaceman is an experimental public preview, not a broadly qualified release.
+Zendows is an experimental public preview, not a broadly qualified release.
 
 - The downloadable preview is currently arm64-only; x86_64 and universal packaging are not validated.
 - The declared macOS 14 minimum lacks a documented validation matrix across supported macOS releases.
@@ -19,7 +19,7 @@ Spaceman is an experimental public preview, not a broadly qualified release.
 - Configuration changes to rules, display assignments, and `[settings]` apply automatically; newly
   referenced named workspace letters register their global shortcuts on the next app start. `ctl restart`
   exits safely but does not relaunch.
-- Spaceman assumes one macOS Space per display. Windows on another Space are adopted into the active
+- Zendows assumes one macOS Space per display. Windows on another Space are adopted into the active
   workspace when that Space is shown, and tiles whose windows are ordered out while it is shown may
   be released.
 - `secondary` selects the first non-main display; display ordering and duplicate names may surprise.

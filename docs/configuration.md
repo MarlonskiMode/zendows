@@ -1,15 +1,15 @@
 # Configuration
 
-Spaceman loads configuration when `spaceman-agent` starts and reloads it automatically whenever the
+Zendows loads configuration when `zendows-agent` starts and reloads it automatically whenever the
 file changes on disk:
 
 ```text
-~/Library/Application Support/Spaceman/config.toml
+~/Library/Application Support/Zendows/config.toml
 ```
 
-Set `SPACEMAN_CONFIG` in the agent's environment to replace that path. A missing file means default
+Set `ZENDOWS_CONFIG` in the agent's environment to replace that path. A missing file means default
 configuration. Invalid configuration at startup is reported to stderr for terminal launches and to
-`~/Library/Application Support/Spaceman/agent.log` for app-bundle launches; Spaceman falls back to
+`~/Library/Application Support/Zendows/agent.log` for app-bundle launches; Zendows falls back to
 defaults and ignores workspace state so it can prioritize restoring parked windows. If an edit saved
 while running fails validation, the running agent logs the error and keeps the previous valid
 configuration.
@@ -17,7 +17,7 @@ configuration.
 Validate a file before replacing or restarting the app:
 
 ```sh
-spaceman config-check "$HOME/Library/Application Support/Spaceman/config.toml"
+zendows config-check "$HOME/Library/Application Support/Zendows/config.toml"
 ```
 
 The complete example is [config.example.toml](../config.example.toml).
@@ -81,12 +81,12 @@ Title matching occurs only in memory. Titles are not serialized into persisted s
 ## Remembered Placements
 
 Window identity in workspace state is tied to a running process, so it cannot survive a reboot or an
-application relaunch. Spaceman therefore also remembers, per application bundle identifier, which
+application relaunch. Zendows therefore also remembers, per application bundle identifier, which
 workspace each managed window lived on, whether it floated, and its last on-screen frame. It never
 records window titles.
 
-During the first 60 seconds after Spaceman starts, when an application bundle is seen for the first
-time and owns no windows yet (such as after a reboot or a Spaceman start without valid workspace
+During the first 60 seconds after Zendows starts, when an application bundle is seen for the first
+time and owns no windows yet (such as after a reboot or a Zendows start without valid workspace
 state), its windows may claim those remembered placements:
 first a window whose frame matches a remembered frame within 8 pixels, then the remaining windows in
 creation order. A claimed window joins its remembered workspace (hidden if that workspace is not
@@ -108,14 +108,14 @@ Defaults assign workspaces 1-5 to `main` and 6-10 to `secondary`. `monitor` acce
 
 - `main`, the display macOS marks as main;
 - `secondary`, the first attached non-main display;
-- an exact display UUID from `spaceman displays`;
-- an exact display name from `spaceman displays`.
+- an exact display UUID from `zendows displays`;
+- an exact display name from `zendows displays`.
 
 ```sh
-spaceman displays
+zendows displays
 ```
 
-A missing `secondary`, UUID, or name falls back to the main display. Spaceman retains the preferred
+A missing `secondary`, UUID, or name falls back to the main display. Zendows retains the preferred
 assignment as its own active lane; reconnecting that display makes its assigned active workspace
 visible again.
 
@@ -133,28 +133,28 @@ across config edits until that state no longer refers to it.
 
 ## Process Scope
 
-`SPACEMAN_MANAGED_DISPLAY` is an internal process-scope override used by isolated tests. It accepts
+`ZENDOWS_MANAGED_DISPLAY` is an internal process-scope override used by isolated tests. It accepts
 `main`, `secondary`, or `both` (the default). It is not a TOML field, and the installed app does not
 provide a UI for setting it. A scoped process registers only workspace hotkeys assigned to its managed
 main/secondary selectors; normal users should leave it unset.
 
-`SPACEMAN_APPLICATION_SUPPORT` is another internal test override. It replaces the Application Support
+`ZENDOWS_APPLICATION_SUPPORT` is another internal test override. It replaces the Application Support
 directory for the default config path, state, logs, and control files so live harnesses cannot touch
 normal recovery data.
 
 ## Applying Changes
 
-Edits saved in Spaceman Settings or in an external editor take effect automatically: rule changes,
+Edits saved in Zendows Settings or in an external editor take effect automatically: rule changes,
 workspace display assignments, `settings.hud`, and `settings.hud_style` reload without restarting;
 `settings.update_channel` applies at the next update check. Global shortcuts for a
 newly added named workspace letter (`Option+A` ... `Option+Z`) register on the next app start:
 
 ```sh
-spaceman ctl pause
-spaceman ctl status
-spaceman ctl quit
-open "/Applications/Spaceman.app"
+zendows ctl pause
+zendows ctl status
+zendows ctl quit
+open "/Applications/Zendows.app"
 ```
 
-`spaceman ctl restart` safely restores parked windows and exits, but currently does not relaunch the
+`zendows ctl restart` safely restores parked windows and exits, but currently does not relaunch the
 app by itself. The source installer uses it before replacing the bundle, then opens the new bundle.
