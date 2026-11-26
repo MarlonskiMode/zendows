@@ -7,7 +7,7 @@ use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Axis, Direction, Rect, SlotId};
+use crate::{Axis, Direction, Rect, ScreenHalf, SlotId};
 
 const MIN_TILE_EXTENT: i32 = 50;
 
@@ -25,6 +25,10 @@ impl Default for LayoutTree {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 enum Node {
     Leaf(SlotId),
+    /// Empty reserved space beside a tile. Used for half-screen snap of a lone
+    /// window: equal-weight Horizontal `[Leaf, Gap]` or `[Gap, Leaf]`. Not a
+    /// slot; sync fills the first Gap when a new window joins.
+    Gap,
     Split { axis: Axis, children: Vec<Child> },
 }
 
@@ -71,7 +75,7 @@ impl LayoutTree {
     pub(crate) const fn root_axis(&self) -> Axis {
         match &self.root {
             Node::Split { axis, .. } => *axis,
-            Node::Leaf(_) => Axis::Horizontal,
+            Node::Leaf(_) | Node::Gap => Axis::Horizontal,
         }
     }
 
@@ -108,7 +112,9 @@ impl LayoutTree {
             }),
         };
         for slot in slots.iter().filter(|slot| !existing.contains(&slot.id)) {
-            if let Some(previous) = anchor
+            if fill_gap(&mut self.root, slot.id) {
+                anchor = Some(slot.id);
+            } else if let Some(previous) = anchor
                 && insert_sibling(&mut self.root, previous, slot.id)
             {
                 anchor = Some(slot.id);
@@ -116,6 +122,44 @@ impl LayoutTree {
                 self.append(fallback_axis, slot.id, slot.weight);
             }
         }
+        true
+    }
+
+    /// Snap a lone tiled slot to the left or right half of `output`'s axis by
+    /// pairing it with a [`Node::Gap`]. Same half again restores full width.
+    /// Returns false when the tree has more than one slot (multi-tile workspaces
+    /// keep their existing split layout).
+    pub(crate) fn snap_half(&mut self, slot: SlotId, half: ScreenHalf) -> bool {
+        let slots = self.slots();
+        if slots.len() != 1 || slots[0] != slot {
+            return false;
+        }
+        if let Node::Split {
+            axis: Axis::Horizontal,
+            children,
+        } = &self.root
+            && children.len() == 2
+        {
+            let left_leaf = matches!(children[0].node, Node::Leaf(existing) if existing == slot);
+            let right_leaf = matches!(children[1].node, Node::Leaf(existing) if existing == slot);
+            let left_gap = matches!(children[0].node, Node::Gap);
+            let right_gap = matches!(children[1].node, Node::Gap);
+            if left_leaf && right_gap {
+                self.root = match half {
+                    ScreenHalf::Left => Self::flat(Axis::Horizontal, [slot]).root,
+                    ScreenHalf::Right => half_split(slot, ScreenHalf::Right),
+                };
+                return true;
+            }
+            if right_leaf && left_gap {
+                self.root = match half {
+                    ScreenHalf::Right => Self::flat(Axis::Horizontal, [slot]).root,
+                    ScreenHalf::Left => half_split(slot, ScreenHalf::Left),
+                };
+                return true;
+            }
+        }
+        self.root = half_split(slot, half);
         true
     }
 
@@ -192,6 +236,12 @@ impl LayoutTree {
         }
     }
 
+    /// True when the tree reserves empty half-space beside a lone tile.
+    #[cfg(test)]
+    pub(crate) fn has_gap(&self) -> bool {
+        node_has_gap(&self.root)
+    }
+
     fn take_slot(&self, slot: SlotId) -> Option<(Node, Node)> {
         match extract(self.root.clone(), slot) {
             (Some(remaining), Some(moved)) => Some((remaining, moved)),
@@ -259,6 +309,11 @@ fn validate_node(node: &Node, root: bool, leaves: &mut HashSet<SlotId>) -> Resul
                 return Err(format!("layout contains duplicate leaf {}", slot.0));
             }
         }
+        Node::Gap => {
+            if root {
+                return Err("layout root cannot be a gap".into());
+            }
+        }
         Node::Split { children, .. } => {
             if !root && children.is_empty() {
                 return Err("layout contains an empty nested split".into());
@@ -272,6 +327,53 @@ fn validate_node(node: &Node, root: bool, leaves: &mut HashSet<SlotId>) -> Resul
         }
     }
     Ok(())
+}
+
+fn half_split(slot: SlotId, half: ScreenHalf) -> Node {
+    let leaf = Child {
+        weight: 1,
+        node: Node::Leaf(slot),
+    };
+    let gap = Child {
+        weight: 1,
+        node: Node::Gap,
+    };
+    Node::Split {
+        axis: Axis::Horizontal,
+        children: match half {
+            ScreenHalf::Left => vec![leaf, gap],
+            ScreenHalf::Right => vec![gap, leaf],
+        },
+    }
+}
+
+fn fill_gap(node: &mut Node, slot: SlotId) -> bool {
+    match node {
+        Node::Gap => {
+            *node = Node::Leaf(slot);
+            true
+        }
+        Node::Split { children, .. } => children
+            .iter_mut()
+            .any(|child| fill_gap(&mut child.node, slot)),
+        Node::Leaf(_) => false,
+    }
+}
+
+fn node_has_leaf(node: &Node) -> bool {
+    match node {
+        Node::Leaf(_) => true,
+        Node::Gap => false,
+        Node::Split { children, .. } => children.iter().any(|child| node_has_leaf(&child.node)),
+    }
+}
+
+fn node_has_gap(node: &Node) -> bool {
+    match node {
+        Node::Gap => true,
+        Node::Leaf(_) => false,
+        Node::Split { children, .. } => children.iter().any(|child| node_has_gap(&child.node)),
+    }
 }
 
 const fn direction_axis(direction: Direction) -> Axis {
@@ -303,6 +405,7 @@ fn split_pair(direction: Direction, moved: Node, anchor: Node) -> Node {
 fn retain(node: Node, retained: &HashSet<SlotId>) -> Option<Node> {
     match node {
         Node::Leaf(slot) => retained.contains(&slot).then_some(Node::Leaf(slot)),
+        Node::Gap => Some(Node::Gap),
         Node::Split { axis, children } => collapse(axis, retain_children(children, retained)),
     }
 }
@@ -320,6 +423,10 @@ fn retain_children(children: Vec<Child>, retained: &HashSet<SlotId>) -> Vec<Chil
 }
 
 fn collapse(axis: Axis, mut children: Vec<Child>) -> Option<Node> {
+    // Orphan gaps (no leaf sibling) are leftover half-snap space; drop them.
+    if !children.iter().any(|child| node_has_leaf(&child.node)) {
+        children.retain(|child| !matches!(child.node, Node::Gap));
+    }
     match children.len() {
         0 => None,
         1 => Some(children.remove(0).node),
@@ -331,6 +438,7 @@ fn extract(node: Node, slot: SlotId) -> (Option<Node>, Option<Node>) {
     match node {
         Node::Leaf(existing) if existing == slot => (None, Some(Node::Leaf(existing))),
         Node::Leaf(existing) => (Some(Node::Leaf(existing)), None),
+        Node::Gap => (Some(Node::Gap), None),
         Node::Split { axis, mut children } => {
             for index in 0..children.len() {
                 let child = children.remove(index);
@@ -371,7 +479,7 @@ fn insert_relative(node: &mut Node, target: SlotId, moved: Node, direction: Dire
             *node = split_pair(direction, moved, target);
             true
         }
-        Node::Leaf(_) => false,
+        Node::Leaf(_) | Node::Gap => false,
         Node::Split {
             axis: parent_axis,
             children,
@@ -416,6 +524,7 @@ fn average_weight(children: &[Child]) -> u32 {
 fn collect_slots(node: &Node, slots: &mut Vec<SlotId>) {
     match node {
         Node::Leaf(slot) => slots.push(*slot),
+        Node::Gap => {}
         Node::Split { children, .. } => {
             for child in children {
                 collect_slots(&child.node, slots);
@@ -442,6 +551,7 @@ fn leaf_weight(node: &Node, slot: SlotId) -> Option<u32> {
 fn place(node: &Node, frame: Rect, placements: &mut Vec<(SlotId, Rect)>) {
     match node {
         Node::Leaf(slot) => placements.push((*slot, frame)),
+        Node::Gap => {}
         Node::Split { axis, children } => {
             for (child, child_frame) in children
                 .iter()
@@ -514,6 +624,7 @@ impl Node {
     fn contains(&self, slot: SlotId) -> bool {
         match self {
             Self::Leaf(existing) => *existing == slot,
+            Self::Gap => false,
             Self::Split { children, .. } => children.iter().any(|child| child.node.contains(slot)),
         }
     }
@@ -523,7 +634,7 @@ fn swap_slots(node: &mut Node, first: SlotId, second: SlotId) {
     match node {
         Node::Leaf(slot) if *slot == first => *slot = second,
         Node::Leaf(slot) if *slot == second => *slot = first,
-        Node::Leaf(_) => {}
+        Node::Leaf(_) | Node::Gap => {}
         Node::Split { children, .. } => {
             for child in children {
                 swap_slots(&mut child.node, first, second);

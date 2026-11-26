@@ -12,7 +12,7 @@ use std::{
 };
 
 use crate::{
-    DisplaySelector, DisplayTarget, ResizeDirection, WorkspaceId,
+    DisplaySelector, DisplayTarget, ResizeDirection, ScreenHalf, WorkspaceId,
     app::{Action, WorkerAction},
 };
 
@@ -21,7 +21,7 @@ const REQUEST_READ_TIMEOUT: Duration = Duration::from_millis(250);
 const RESPONSE_TIMEOUT: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(6);
 
-pub const COMMAND_USAGE: &str = "status|debug|settings|open-settings|open-accessibility|check-for-updates|toggle-launch-at-login|switch WORKSPACE|back-and-forth|move-workspace [next|prev|DISPLAY]|move WORKSPACE|move-app ID WORKSPACE|focus DIR|focus next|move-direction DIR|layout|fullscreen|float|resize shrink|resize grow|balance|pause|resume|retile|wrong|restart|quit";
+pub const COMMAND_USAGE: &str = "status|debug|settings|open-settings|open-accessibility|check-for-updates|toggle-launch-at-login|switch WORKSPACE|back-and-forth|move-workspace [next|prev|DISPLAY]|move WORKSPACE|move-app ID WORKSPACE|focus DIR|focus next|move-direction DIR|layout|fullscreen|float|snap left|snap right|resize shrink|resize grow|balance|pause|resume|retile|wrong|restart|quit";
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum Command {
@@ -217,6 +217,8 @@ fn parse_line(line: &str) -> Result<Command, String> {
         ["layout"] => WorkerAction::ToggleLayout,
         ["fullscreen"] => WorkerAction::ToggleFullscreenLayout,
         ["float"] => WorkerAction::ToggleFloat,
+        ["snap", "left"] => WorkerAction::SnapHalf(ScreenHalf::Left),
+        ["snap", "right"] => WorkerAction::SnapHalf(ScreenHalf::Right),
         ["resize", "shrink"] => WorkerAction::Resize(ResizeDirection::Shrink),
         ["resize", "grow"] => WorkerAction::Resize(ResizeDirection::Grow),
         ["balance"] => WorkerAction::Balance,
@@ -306,6 +308,11 @@ mod tests {
         assert_eq!(queued("focus next"), WorkerAction::CycleFocus);
         assert_eq!(queued("fullscreen"), WorkerAction::ToggleFullscreenLayout);
         assert_eq!(queued("float"), WorkerAction::ToggleFloat);
+        assert_eq!(queued("snap left"), WorkerAction::SnapHalf(ScreenHalf::Left));
+        assert_eq!(
+            queued("snap right"),
+            WorkerAction::SnapHalf(ScreenHalf::Right)
+        );
     }
 
     #[test]

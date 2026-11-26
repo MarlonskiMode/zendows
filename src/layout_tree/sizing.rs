@@ -313,7 +313,7 @@ fn immediate_parent(node: &Node, slot: SlotId, path: Vec<usize>) -> Option<(Vec<
 
 fn minimum_extent(node: &Node, axis: Axis) -> i32 {
     match node {
-        Node::Leaf(_) => MIN_TILE_EXTENT,
+        Node::Leaf(_) | Node::Gap => MIN_TILE_EXTENT,
         Node::Split {
             axis: split_axis,
             children,
@@ -371,6 +371,7 @@ pub(super) fn required_extent(
             });
             known.max(MIN_TILE_EXTENT)
         }
+        Node::Gap => MIN_TILE_EXTENT,
         Node::Split {
             axis: split_axis,
             children,

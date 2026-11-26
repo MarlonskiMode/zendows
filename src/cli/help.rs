@@ -238,6 +238,7 @@ pub(crate) fn ctl_help(executable: &str) -> String {
         "  layout                     Toggle the workspace split axis",
         "  fullscreen                 Toggle Fullscreen Layout on the active workspace",
         "  float                      Float the focused window above the tiles, or tile it again",
+        "  snap <left|right>          Snap a lone tiled window to the left or right half",
         "  resize <shrink|grow>       Adjust the focused window's layout weight",
         "  balance                    Reset split weights evenly",
         "  retile                     Force a fresh observation and retile",

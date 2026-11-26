@@ -23,6 +23,7 @@ const LAYOUT_SHORTCUTS: &[(&str, &[&[&str]])] = &[
     ("Move tile", &[&["⌥", "⇧", "H J K L"]]),
     ("Flip split", &[&["⌥", "/"]]),
     ("Resize tile", &[&["⌥", "-"], &["⌥", "="]]),
+    ("Snap lone window half", &[&["⌥", "←"], &["⌥", "→"]]),
     ("Toggle floating window", &[&["⌥", "⇧", "Space"]]),
     ("Fullscreen layout", &[&["⌥", "⇧", "F"]]),
 ];

@@ -235,6 +235,47 @@ fn keyboard_resize_applies_and_persists_the_focused_layout() {
 }
 
 #[test]
+fn half_screen_snap_places_a_lone_tile_then_toggles_full() {
+    let only = window(10);
+    let mut backend = FakeBackend {
+        focused: Some(only.clone()),
+        ..FakeBackend::default()
+    };
+    backend.frames.insert(only.clone(), frame(50));
+    let mut runtime = runtime(backend);
+    bind(&mut runtime, WorkspaceId::ONE, &only);
+    let outputs = outputs();
+    let cancelled = AtomicBool::new(false);
+
+    runtime
+        .snap_focused_half(crate::ScreenHalf::Left, outputs.clone(), &cancelled)
+        .unwrap();
+    assert_eq!(runtime.backend.frames[&only].x, 0);
+    assert_eq!(runtime.backend.frames[&only].width, 500);
+    assert!(runtime.backend.workspace_state.is_some());
+
+    runtime
+        .snap_focused_half(crate::ScreenHalf::Right, outputs.clone(), &cancelled)
+        .unwrap();
+    assert_eq!(runtime.backend.frames[&only].x, 500);
+    assert_eq!(runtime.backend.frames[&only].width, 500);
+
+    runtime
+        .snap_focused_half(crate::ScreenHalf::Right, outputs.clone(), &cancelled)
+        .unwrap();
+    assert_eq!(runtime.backend.frames[&only].width, 1000);
+
+    let second = window(20);
+    runtime.backend.focused = Some(only.clone());
+    bind(&mut runtime, WorkspaceId::ONE, &second);
+    runtime.backend.frames.insert(second, frame(500));
+    match runtime.snap_focused_half(crate::ScreenHalf::Left, outputs, &cancelled) {
+        Err(err) => assert!(err.contains("single tiled window"), "{err}"),
+        Ok(_) => panic!("expected half-screen snap to refuse a multi-tile workspace"),
+    }
+}
+
+#[test]
 fn balance_applies_and_persists_the_focused_parent_split() {
     let first = window(10);
     let second = window(20);

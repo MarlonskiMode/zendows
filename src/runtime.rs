@@ -262,6 +262,14 @@ impl Engine {
         })
     }
 
+    pub(crate) fn snap_focused_half(
+        &mut self,
+        window: &PhysicalWindowId,
+        half: crate::ScreenHalf,
+    ) -> bool {
+        self.edit_slot(window, |layout, slot| layout.snap_half(slot, half))
+    }
+
     pub(crate) fn balance_focused_parent(
         &mut self,
         window: &PhysicalWindowId,

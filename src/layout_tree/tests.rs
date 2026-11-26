@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{Axis, Direction, Rect, ResizeDirection, SlotId};
+use crate::{Axis, Direction, Rect, ResizeDirection, ScreenHalf, SlotId};
 
 use super::{Child, LayoutTree, MIN_TILE_EXTENT, Node};
 
@@ -430,4 +430,71 @@ fn stacking_is_rejected_when_the_other_dimension_cannot_fit() {
     };
     let minimums = HashMap::from([(SlotId(1), (600, 450)), (SlotId(2), (600, 450))]);
     assert!(tree.fitted(output, &minimums).is_none());
+}
+
+#[test]
+fn snap_half_reserves_a_gap_for_a_lone_tile() {
+    let mut tree = LayoutTree::flat(Axis::Horizontal, [SlotId(1)]);
+    assert!(tree.snap_half(SlotId(1), ScreenHalf::Left));
+    assert!(tree.has_gap());
+    let placements = tree.placements(output());
+    assert_eq!(placements.len(), 1);
+    assert_eq!(placements[0].1.x, 0);
+    assert_eq!(placements[0].1.width, 500);
+
+    assert!(tree.snap_half(SlotId(1), ScreenHalf::Right));
+    let placements = tree.placements(output());
+    assert_eq!(placements[0].1.x, 500);
+    assert_eq!(placements[0].1.width, 500);
+
+    assert!(tree.snap_half(SlotId(1), ScreenHalf::Right));
+    assert!(!tree.has_gap());
+    assert_eq!(tree.placements(output())[0].1.width, 1000);
+}
+
+#[test]
+fn snap_half_rejects_multi_tile_workspaces() {
+    let mut tree = LayoutTree::flat(Axis::Horizontal, [SlotId(1), SlotId(2)]);
+    assert!(!tree.snap_half(SlotId(1), ScreenHalf::Left));
+    assert!(!tree.has_gap());
+}
+
+#[test]
+fn sync_fills_a_half_snap_gap_with_a_new_window() {
+    let mut tree = LayoutTree::flat(Axis::Horizontal, [SlotId(1)]);
+    assert!(tree.snap_half(SlotId(1), ScreenHalf::Left));
+    let slots = [
+        crate::Slot {
+            id: SlotId(1),
+            weight: 1,
+            binding: crate::BindingState::Unresolved {
+                previous: test_window(1),
+                candidates: Vec::new(),
+                since: 0,
+            },
+        },
+        crate::Slot {
+            id: SlotId(2),
+            weight: 1,
+            binding: crate::BindingState::Unresolved {
+                previous: test_window(2),
+                candidates: Vec::new(),
+                since: 0,
+            },
+        },
+    ];
+    assert!(tree.sync_near(Axis::Horizontal, &slots, Some(SlotId(1))));
+    assert!(!tree.has_gap());
+    assert_eq!(tree.slots(), vec![SlotId(1), SlotId(2)]);
+    let placements = tree.placements(output());
+    assert_eq!(placements[0].1.width, 500);
+    assert_eq!(placements[1].1.x, 500);
+}
+
+#[test]
+fn keyboard_resize_adjusts_a_half_snapped_tile_against_its_gap() {
+    let mut tree = LayoutTree::flat(Axis::Horizontal, [SlotId(1)]);
+    assert!(tree.snap_half(SlotId(1), ScreenHalf::Left));
+    assert!(tree.resize_by(SlotId(1), ResizeDirection::Grow, 50, output()));
+    assert_eq!(tree.placements(output())[0].1.width, 550);
 }

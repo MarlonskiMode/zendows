@@ -38,6 +38,9 @@ fn actions() -> Vec<(WorkerAction, DirectAction)> {
         (WorkerAction::Resize(ResizeDirection::Grow), |r, o, c| {
             r.resize_focused(ResizeDirection::Grow, o, c)
         }),
+        (WorkerAction::SnapHalf(crate::ScreenHalf::Left), |r, o, c| {
+            r.snap_focused_half(crate::ScreenHalf::Left, o, c)
+        }),
         (WorkerAction::Balance, |r, o, c| r.balance_focused(o, c)),
         (WorkerAction::ToggleFullscreenLayout, |r, o, c| {
             r.toggle_fullscreen_layout(o, c)

@@ -58,3 +58,10 @@ pub enum ResizeDirection {
     Shrink,
     Grow,
 }
+
+/// Horizontal half of the workspace usable frame for a lone tiled window.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ScreenHalf {
+    Left,
+    Right,
+}

@@ -247,6 +247,7 @@ impl<B: WorkspaceBackend> WorkspaceRuntime<B> {
             WorkerAction::Reorder(direction) => self.reorder_focused(direction, outputs, cancelled),
             WorkerAction::ToggleLayout => self.toggle_layout(outputs, cancelled),
             WorkerAction::Resize(direction) => self.resize_focused(direction, outputs, cancelled),
+            WorkerAction::SnapHalf(half) => self.snap_focused_half(half, outputs, cancelled),
             WorkerAction::Balance => self.balance_focused(outputs, cancelled),
             WorkerAction::ToggleFullscreenLayout => {
                 self.toggle_fullscreen_layout(outputs, cancelled)
