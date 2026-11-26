@@ -404,6 +404,33 @@ impl<B: WorkspaceBackend> WorkspaceRuntime<B> {
         self.relayout_persist(workspace, &outputs, cancelled)
     }
 
+    pub(super) fn snap_focused_half(
+        &mut self,
+        half: crate::ScreenHalf,
+        outputs: macos::DisplayOutputs,
+        cancelled: &AtomicBool,
+    ) -> Result<CycleStatus, String> {
+        let (window, workspace) = self.focused_active_workspace(&outputs, cancelled, false)?;
+        if self.workspaces.uses_fullscreen_layout(workspace) {
+            self.workspaces.set_fullscreen_layout(workspace, false);
+            self.pending_fullscreen_focus_restore.remove(&workspace);
+        }
+        if self.workspaces.engine(workspace).model().workspace.slots.len() != 1 {
+            return Err(
+                "Half-screen snap needs a single tiled window (open only one, or float the rest)"
+                    .into(),
+            );
+        }
+        if !self
+            .workspaces
+            .engine_mut(workspace)
+            .snap_focused_half(&window, half)
+        {
+            return Ok(self.status(0, &outputs));
+        }
+        self.relayout_persist(workspace, &outputs, cancelled)
+    }
+
     pub(super) fn balance_focused(
         &mut self,
         outputs: macos::DisplayOutputs,

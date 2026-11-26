@@ -19,7 +19,7 @@ Focus                                                   // tile.focus
 └── Option+` / ctl focus next        -> next tile in stable order, wrapping
 
 Reorder                                                 // tile.reorder
-├── Option+Shift+H/J/K/L / ctl move-direction <dir> -> swap/move within the tree
+├── Option+Shift+H/J/K/L / Option+←/→ / ctl move-direction <dir> -> swap/move within the tree
 │   ├── At the workspace edge -> moves to the adjacent display's active workspace
 │   └── Perpendicular move    -> re-orients or creates a mixed split
 └── Pointer drag
@@ -29,6 +29,11 @@ Reorder                                                 // tile.reorder
 
 Size                                                    // tile.size
 ├── Option+- / Option+= / ctl resize shrink|grow -> 50 px at the immediate split
+├── Option+Shift+← / Option+Shift+→ / ctl snap left|right -> lone tile half via a Gap sibling
+│   ├── Same half again -> restores full width
+│   ├── Other half -> moves the tile
+│   ├── Multi-tile workspace -> refused (keeps the existing split)
+│   └── New window -> fills the Gap (side-by-side halves)
 ├── Pointer resize       -> split weights follow both edges of a corner drag, preview during the gesture
 ├── ctl balance          -> equalize the focused tile's immediate split (no default hotkey)
 └── Window refuses its tile size (app minimum) -> its tile grows to fit and siblings give up
@@ -41,9 +46,9 @@ Axis                                                    // tile.axis
 ## How To Get To It (User POV)
 
 ```ts
-Keyboard: Option+H/J/K/L, Option+Shift+H/J/K/L, Option+`, Option+-, Option+=, Option+/
+Keyboard: Option+H/J/K/L, Option+Shift+H/J/K/L, Option+←/→, Option+Shift+←/→, Option+`, Option+-, Option+=, Option+/
 Pointer:  drag a managed window (reorder/nest/move display), drag its edge (resize)
-CLI:      zendows ctl focus | move-direction | resize | balance | layout | retile
+CLI:      zendows ctl focus | move-direction | resize | snap | balance | layout | retile
 ```
 
 Input arriving while the worker is busy queues in order (up to 64); queued input is dropped on
@@ -55,12 +60,14 @@ pause, quit, or hotkey loss.
   `focus_navigation_crosses_to_the_adjacent_display`,
   `workspace_focus_cycle_wraps_through_tile_order_in_every_layout`,
   `keyboard_resize_applies_and_persists_the_focused_layout`,
+  `half_screen_snap_places_a_lone_tile_then_toggles_full`,
   `balance_applies_and_persists_the_focused_parent_split`,
   `reorder_moves_to_the_adjacent_display_at_a_tile_boundary`,
   `perpendicular_reorder_creates_a_mixed_split_for_three_windows`,
   `layout_toggle_repartitions_and_persists_the_focused_workspace`.
-- Engine and layout tree: `new_window_joins_the_focused_nested_split` and
-  `corner_drag_moves_both_nested_boundaries` cover insertion and diagonal resizing.
+- Engine and layout tree: `new_window_joins_the_focused_nested_split`,
+  `corner_drag_moves_both_nested_boundaries`, `snap_half_reserves_a_gap_for_a_lone_tile`,
+  `sync_fills_a_half_snap_gap_with_a_new_window` cover insertion, diagonal resizing, and half-snap.
 - Unit (FakeBackend), `src/app/tests/gestures.rs`: drag swap preview, edge-nesting preview,
   cross-display drop; `startup.rs` covers gesture classification and `src/app/input.rs` covers
   queued final gestures.

@@ -19,6 +19,8 @@ fails after the old registrations are released, it pauses and reports `Hotkeys u
 | `Option+Shift+H/J/K/L` | Move the focused tile in that direction |
 | `Option+/` | Toggle the active workspace layout's root horizontal/vertical axis |
 | `Option+-` / `Option+=` | Shrink/grow the focused tile by 50 pixels at its immediate split |
+| `Option+←` / `Option+→` | Move the focused tile left/right (same action as `Option+Shift+H` / `Option+Shift+L`) |
+| `Option+Shift+←` / `Option+Shift+→` | Snap a lone tiled window to the left/right half of the workspace (same key again restores full width); error when more than one tile |
 | `Option+Shift+F` | Toggle the workspace-wide Fullscreen Layout without entering native fullscreen |
 | `Option+Shift+Space` | Float the focused window above the tiles, or tile it again |
 | Three-finger swipe left/right | Next/previous workspace on the display under the pointer |
@@ -131,6 +133,8 @@ zendows ctl move-direction right
 zendows ctl layout
 zendows ctl fullscreen
 zendows ctl float
+zendows ctl snap left
+zendows ctl snap right
 zendows ctl resize shrink
 zendows ctl resize grow
 zendows ctl balance
@@ -147,8 +151,11 @@ zendows doctor 24
 
 Directions are `left`, `down`, `up`, and `right`. `focus next` is Option-backtick,
 `fullscreen` toggles the focused workspace's Fullscreen Layout, like `Option+Shift+F`, and `float`
-toggles the focused window's floating, like `Option+Shift+Space`. `balance` equalizes the focused tile's immediate
-split while respecting nested minimum sizes. `hud` repeatedly renders sanitized runtime geometry in
+toggles the focused window's floating, like `Option+Shift+Space`. `snap left` / `snap right` match
+`Option+Shift+←` / `Option+Shift+→`: with one tiled window they reserve the other half as empty layout
+space (a durable Gap sibling); with multiple tiles they refuse. Pressing the same half again restores
+full width. `Option+←` / `Option+→` reorder the focused tile like `Option+Shift+H` / `Option+Shift+L`.
+`balance` equalizes the focused tile's immediate split while respecting nested minimum sizes. `hud` repeatedly renders sanitized runtime geometry in
 the terminal until interrupted. `ctl wrong` marks the journal the moment something looks wrong and
 writes a full arrangement snapshot, so `doctor` shows what the screen held then.
 

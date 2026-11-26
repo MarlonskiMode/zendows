@@ -205,6 +205,8 @@ pub(crate) enum WorkerAction {
     Reorder(Direction),
     ToggleLayout,
     Resize(ResizeDirection),
+    /// Snap a lone tiled window to the left or right half of the workspace.
+    SnapHalf(crate::ScreenHalf),
     Balance,
     ToggleFullscreenLayout,
     /// Float the focused window above the workspace's tiles, or tile it again.
@@ -228,6 +230,7 @@ impl WorkerAction {
             Self::Reorder(_) => "directional move queued".into(),
             Self::ToggleLayout => "layout toggle queued".into(),
             Self::Resize(_) => "resize queued".into(),
+            Self::SnapHalf(_) => "half-screen snap queued".into(),
             Self::Balance => "balance queued".into(),
             Self::ToggleFullscreenLayout => "fullscreen layout toggle queued".into(),
             Self::ToggleFloat => "float toggle queued".into(),

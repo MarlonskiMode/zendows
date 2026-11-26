@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, ffi::c_void, ptr, sync::mpsc::Sender};
 pub(crate) use delivery::DeliveryWatch;
 
 use crate::{
-    Direction, DisplayTarget, ResizeDirection, WorkspaceId,
+    Direction, DisplayTarget, ResizeDirection, ScreenHalf, WorkspaceId,
     app::{Action, WorkerAction},
     keyboard_layout::{LayoutFingerprint, LayoutSnapshot, LogicalKey, SemanticKey},
 };
@@ -102,7 +102,7 @@ impl HotkeyPlan {
     }
 
     fn from_layout(enabled: &[WorkspaceId], layout: &LayoutSnapshot) -> Result<Self, String> {
-        let mut plan = PlanBuilder::new(layout, 16 + enabled.len() * 2);
+        let mut plan = PlanBuilder::new(layout, 20 + enabled.len() * 2);
         let claimed_letters = enabled
             .iter()
             .filter_map(|workspace| workspace.letter().map(|letter| letter.to_ascii_lowercase()))
@@ -196,6 +196,30 @@ impl HotkeyPlan {
                 OPTION_KEY,
                 WorkerAction::Resize(ResizeDirection::Grow),
                 "grow layout",
+            ),
+            (
+                LogicalKey::Semantic(SemanticKey::LeftArrow),
+                OPTION_KEY,
+                WorkerAction::Reorder(Direction::Left),
+                "move window left (arrow)",
+            ),
+            (
+                LogicalKey::Semantic(SemanticKey::RightArrow),
+                OPTION_KEY,
+                WorkerAction::Reorder(Direction::Right),
+                "move window right (arrow)",
+            ),
+            (
+                LogicalKey::Semantic(SemanticKey::LeftArrow),
+                OPTION_KEY | SHIFT_KEY,
+                WorkerAction::SnapHalf(ScreenHalf::Left),
+                "snap left half",
+            ),
+            (
+                LogicalKey::Semantic(SemanticKey::RightArrow),
+                OPTION_KEY | SHIFT_KEY,
+                WorkerAction::SnapHalf(ScreenHalf::Right),
+                "snap right half",
             ),
         ] {
             if matches!(key, LogicalKey::Character(character) if claimed_letters.contains(&character))
@@ -492,11 +516,27 @@ mod tests {
                 WorkerAction::Resize(ResizeDirection::Shrink),
             ),
             ("grow layout", WorkerAction::Resize(ResizeDirection::Grow)),
+            (
+                "snap left half",
+                WorkerAction::SnapHalf(ScreenHalf::Left),
+            ),
+            (
+                "snap right half",
+                WorkerAction::SnapHalf(ScreenHalf::Right),
+            ),
             ("cycle workspace windows", WorkerAction::CycleFocus),
             ("focus left", WorkerAction::Focus(Direction::Left)),
             ("focus right", WorkerAction::Focus(Direction::Right)),
             ("move window left", WorkerAction::Reorder(Direction::Left)),
             ("move window right", WorkerAction::Reorder(Direction::Right)),
+            (
+                "move window left (arrow)",
+                WorkerAction::Reorder(Direction::Left),
+            ),
+            (
+                "move window right (arrow)",
+                WorkerAction::Reorder(Direction::Right),
+            ),
             ("switch workspace 10", WorkerAction::SwitchWorkspace(ten)),
             (
                 "move window to workspace 10",
@@ -505,14 +545,28 @@ mod tests {
         ] {
             assert_eq!(action(&plan, description), Some(&expected), "{description}");
         }
+        let left_arrow = plan
+            .registrations
+            .iter()
+            .find(|registration| registration.description == "move window left (arrow)")
+            .unwrap();
+        assert_eq!(left_arrow.key_code, 0x7b);
+        assert_eq!(left_arrow.modifiers, OPTION_KEY);
+        let snap_left = plan
+            .registrations
+            .iter()
+            .find(|registration| registration.description == "snap left half")
+            .unwrap();
+        assert_eq!(snap_left.key_code, 0x7b);
+        assert_eq!(snap_left.modifiers, OPTION_KEY | SHIFT_KEY);
     }
 
     #[test]
-    fn full_plan_contains_all_thirty_six_registrations() {
+    fn full_plan_contains_all_forty_registrations() {
         let enabled = WorkspaceId::numbered().collect::<Vec<_>>();
         let plan = HotkeyPlan::from_layout(&enabled, &layout()).unwrap();
-        assert_eq!(plan.registrations.len(), 36);
-        assert!(plan.registrations.capacity() >= 36);
+        assert_eq!(plan.registrations.len(), 40);
+        assert!(plan.registrations.capacity() >= 40);
         let move_ws = plan
             .registrations
             .iter()

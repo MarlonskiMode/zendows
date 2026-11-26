@@ -20,9 +20,10 @@ const WORKSPACE_SHORTCUTS: &[(&str, &[&[&str]])] = &[
 const LAYOUT_SHORTCUTS: &[(&str, &[&[&str]])] = &[
     ("Next window", &[&["⌥", "`"]]),
     ("Focus tile", &[&["⌥", "H J K L"]]),
-    ("Move tile", &[&["⌥", "⇧", "H J K L"]]),
+    ("Move tile", &[&["⌥", "⇧", "H J K L"], &["⌥", "← →"]]),
     ("Flip split", &[&["⌥", "/"]]),
     ("Resize tile", &[&["⌥", "-"], &["⌥", "="]]),
+    ("Snap lone window half", &[&["⌥", "⇧", "←"], &["⌥", "⇧", "→"]]),
     ("Toggle floating window", &[&["⌥", "⇧", "Space"]]),
     ("Fullscreen layout", &[&["⌥", "⇧", "F"]]),
 ];
