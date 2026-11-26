@@ -19,7 +19,7 @@ Focus                                                   // tile.focus
 └── Option+` / ctl focus next        -> next tile in stable order, wrapping
 
 Reorder                                                 // tile.reorder
-├── Option+Shift+H/J/K/L / ctl move-direction <dir> -> swap/move within the tree
+├── Option+Shift+H/J/K/L / Option+←/→ / ctl move-direction <dir> -> swap/move within the tree
 │   ├── At the workspace edge -> moves to the adjacent display's active workspace
 │   └── Perpendicular move    -> re-orients or creates a mixed split
 └── Pointer drag
@@ -29,7 +29,7 @@ Reorder                                                 // tile.reorder
 
 Size                                                    // tile.size
 ├── Option+- / Option+= / ctl resize shrink|grow -> 50 px at the immediate split
-├── Option+← / Option+→ / ctl snap left|right -> lone tile to left/right half via a Gap sibling
+├── Option+Shift+← / Option+Shift+→ / ctl snap left|right -> lone tile half via a Gap sibling
 │   ├── Same half again -> restores full width
 │   ├── Other half -> moves the tile
 │   ├── Multi-tile workspace -> refused (keeps the existing split)
@@ -46,7 +46,7 @@ Axis                                                    // tile.axis
 ## How To Get To It (User POV)
 
 ```ts
-Keyboard: Option+H/J/K/L, Option+Shift+H/J/K/L, Option+`, Option+-, Option+=, Option+←/→, Option+/
+Keyboard: Option+H/J/K/L, Option+Shift+H/J/K/L, Option+←/→, Option+Shift+←/→, Option+`, Option+-, Option+=, Option+/
 Pointer:  drag a managed window (reorder/nest/move display), drag its edge (resize)
 CLI:      zendows ctl focus | move-direction | resize | snap | balance | layout | retile
 ```

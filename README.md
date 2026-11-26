@@ -116,7 +116,8 @@ Core controls:
 | `Option+Shift+H/J/K/L` | Move the focused tile left/down/up/right |
 | `Option+/` | Toggle the active layout's root split axis |
 | `Option+-`, `Option+=` | Shrink/grow the focused tile by 50 pixels |
-| `Option+←`, `Option+→` | Snap a lone tiled window to left/right half (again restores full) |
+| `Option+←`, `Option+→` | Move the focused tile left/right (same as `Option+Shift+H/L`) |
+| `Option+Shift+←`, `Option+Shift+→` | Snap a lone tiled window to left/right half (again restores full) |
 | `Option+Shift+F` | Toggle Fullscreen Layout without native fullscreen |
 | `Option+Shift+Space` | Float the focused window above the tiles, or tile it again |
 | Three-finger swipe left/right | Next/previous occupied workspace on the display under the pointer |
